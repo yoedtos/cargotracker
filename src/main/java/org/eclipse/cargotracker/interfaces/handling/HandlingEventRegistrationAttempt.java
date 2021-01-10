@@ -1,6 +1,7 @@
 package org.eclipse.cargotracker.interfaces.handling;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
@@ -18,14 +19,14 @@ public class HandlingEventRegistrationAttempt implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private final Date registrationTime;
-	private final Date completionTime;
+	private final LocalDateTime registrationTime;
+	private final LocalDateTime completionTime;
 	private final TrackingId trackingId;
 	private final VoyageNumber voyageNumber;
 	private final HandlingEvent.Type type;
 	private final UnLocode unLocode;
 
-	public HandlingEventRegistrationAttempt(Date registrationDate, Date completionDate, TrackingId trackingId,
+	public HandlingEventRegistrationAttempt(LocalDateTime registrationDate, LocalDateTime completionDate, TrackingId trackingId,
 			VoyageNumber voyageNumber, HandlingEvent.Type type, UnLocode unLocode) {
 		this.registrationTime = registrationDate;
 		this.completionTime = completionDate;
@@ -33,10 +34,6 @@ public class HandlingEventRegistrationAttempt implements Serializable {
 		this.voyageNumber = voyageNumber;
 		this.type = type;
 		this.unLocode = unLocode;
-	}
-
-	public Date getCompletionTime() {
-		return new Date(completionTime.getTime());
 	}
 
 	public TrackingId getTrackingId() {
@@ -55,8 +52,12 @@ public class HandlingEventRegistrationAttempt implements Serializable {
 		return unLocode;
 	}
 
-	public Date getRegistrationTime() {
+	public LocalDateTime getRegistrationTime() {
 		return registrationTime;
+	}
+
+	public LocalDateTime getCompletionTime() {
+		return completionTime;
 	}
 
 	@Override

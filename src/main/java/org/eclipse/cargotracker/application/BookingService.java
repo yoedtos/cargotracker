@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker.application;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -16,7 +18,7 @@ public interface BookingService {
 	/**
 	 * Registers a new cargo in the tracking system, not yet routed.
 	 */
-	TrackingId bookNewCargo(UnLocode origin, UnLocode destination, Date arrivalDeadline);
+	TrackingId bookNewCargo(UnLocode origin, UnLocode destination, LocalDate arrivalDeadline);
 
 	/**
 	 * Requests a list of itineraries describing possible routes for this cargo.
@@ -30,5 +32,5 @@ public interface BookingService {
 
 	void changeDestination(TrackingId trackingId, UnLocode unLocode);
 
-	void changeDeadline(TrackingId trackingId, Date deadline);
+	void changeDeadline(TrackingId trackingId, LocalDate deadline);
 }

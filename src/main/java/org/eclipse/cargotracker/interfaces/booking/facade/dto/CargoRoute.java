@@ -2,6 +2,8 @@ package org.eclipse.cargotracker.interfaces.booking.facade.dto;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -17,7 +19,8 @@ public class CargoRoute implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy hh:mm a z");
+	// public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
+	//private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DT_PATTERN);
 
 	private final String trackingId;
 	private final String origin;
@@ -30,12 +33,12 @@ public class CargoRoute implements Serializable {
 	private final String transportStatus;
 	private String nextLocation;
 
-	public CargoRoute(String trackingId, String origin, String finalDestination, Date arrivalDeadline,
+	public CargoRoute(String trackingId, String origin, String finalDestination, LocalDateTime arrivalDeadline,
 			boolean misrouted, boolean claimed, String lastKnownLocation, String transportStatus) {
 		this.trackingId = trackingId;
 		this.origin = origin;
 		this.finalDestination = finalDestination;
-		this.arrivalDeadline = DATE_FORMAT.format(arrivalDeadline);
+		this.arrivalDeadline = DateUtil.toString(arrivalDeadline);
 		this.misrouted = misrouted;
 		this.claimed = claimed;
 		this.lastKnownLocation = lastKnownLocation;
@@ -77,7 +80,7 @@ public class CargoRoute implements Serializable {
 
 	// TODO [Clean Code] See if this can be done in a more DDD friendly way.
 	public void addLeg(String voyageNumber, String fromUnLocode, String fromName, String toUnLocode, String toName,
-			Date loadTime, Date unloadTime) {
+			LocalDateTime loadTime, LocalDateTime unloadTime) {
 		legs.add(new Leg(voyageNumber, fromUnLocode, fromName, toUnLocode, toName, loadTime, unloadTime));
 	}
 

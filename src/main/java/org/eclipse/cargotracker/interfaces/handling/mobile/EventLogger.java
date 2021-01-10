@@ -1,6 +1,7 @@
 package org.eclipse.cargotracker.interfaces.handling.mobile;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -56,7 +57,7 @@ public class EventLogger implements Serializable {
 	private String location;
 	private String eventType;
 	private String voyageNumber;
-	private Date completionDate;
+	private LocalDateTime completionDate;
 
 	public void setTrackingId(String trackingId) {
 		this.trackingId = trackingId;
@@ -102,12 +103,12 @@ public class EventLogger implements Serializable {
 		return voyages;
 	}
 
-	public void setCompletionDate(Date completionDate) {
-		this.completionDate = completionDate;
+	public LocalDateTime getCompletionDate() {
+		return completionDate;
 	}
 
-	public Date getCompletionDate() {
-		return completionDate;
+	public void setCompletionDate(LocalDateTime completionDate) {
+		this.completionDate = completionDate;
 	}
 
 	@PostConstruct
@@ -149,7 +150,7 @@ public class EventLogger implements Serializable {
 		}
 
 		if ("dateTab".equals(event.getNewStep())) {
-			completionDate = Calendar.getInstance().getTime();
+			completionDate = LocalDateTime.now();
 		}
 
 		return event.getNewStep();
@@ -171,7 +172,6 @@ public class EventLogger implements Serializable {
 	public void submit() {
 		VoyageNumber voyage;
 
-		Date registrationTime = new Date();
 		TrackingId trackingId = new TrackingId(this.trackingId);
 		UnLocode location = new UnLocode(this.location);
 		HandlingEvent.Type type = HandlingEvent.Type.valueOf(eventType);
@@ -183,7 +183,7 @@ public class EventLogger implements Serializable {
 			voyage = null;
 		}
 
-		HandlingEventRegistrationAttempt attempt = new HandlingEventRegistrationAttempt(registrationTime,
+		HandlingEventRegistrationAttempt attempt = new HandlingEventRegistrationAttempt(LocalDateTime.now(),
 				completionDate, trackingId, voyage, type, location);
 
 		applicationEvents.receivedHandlingEventRegistrationAttempt(attempt);

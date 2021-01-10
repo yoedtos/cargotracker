@@ -15,18 +15,18 @@ import org.junit.Test;
 public class RouteSpecificationTest {
 
 	Voyage hongKongTokyoNewYork = new Voyage.Builder(new VoyageNumber("V001"), SampleLocations.HONGKONG)
-			.addMovement(SampleLocations.TOKYO, DateUtil.toDate("2009-02-01"), DateUtil.toDate("2009-02-05"))
-			.addMovement(SampleLocations.NEWYORK, DateUtil.toDate("2009-02-06"), DateUtil.toDate("2009-02-10"))
-			.addMovement(SampleLocations.HONGKONG, DateUtil.toDate("2009-02-11"), DateUtil.toDate("2009-02-14"))
+			.addMovement(SampleLocations.TOKYO, DateUtil.toDateTime("2009-02-01","00:00"), DateUtil.toDateTime("2009-02-05","00:00"))
+			.addMovement(SampleLocations.NEWYORK, DateUtil.toDateTime("2009-02-06","00:00"), DateUtil.toDateTime("2009-02-10","00:00"))
+			.addMovement(SampleLocations.HONGKONG, DateUtil.toDateTime("2009-02-11","00:00"), DateUtil.toDateTime("2009-02-14","00:00"))
 			.build();
 	Voyage dallasNewYorkChicago = new Voyage.Builder(new VoyageNumber("V002"), SampleLocations.DALLAS)
-			.addMovement(SampleLocations.NEWYORK, DateUtil.toDate("2009-02-06"), DateUtil.toDate("2009-02-07"))
-			.addMovement(SampleLocations.CHICAGO, DateUtil.toDate("2009-02-12"), DateUtil.toDate("2009-02-20")).build();
+			.addMovement(SampleLocations.NEWYORK, DateUtil.toDateTime("2009-02-06","00:00"), DateUtil.toDateTime("2009-02-07","00:00"))
+			.addMovement(SampleLocations.CHICAGO, DateUtil.toDateTime("2009-02-12","00:00"), DateUtil.toDateTime("2009-02-20","00:00")).build();
 	Itinerary itinerary = new Itinerary(Arrays.asList(
 			new Leg(hongKongTokyoNewYork, SampleLocations.HONGKONG, SampleLocations.NEWYORK,
-					DateUtil.toDate("2009-02-01"), DateUtil.toDate("2009-02-10")),
+					DateUtil.toDateTime("2009-02-01","00:00"), DateUtil.toDateTime("2009-02-10","00:00")),
 			new Leg(dallasNewYorkChicago, SampleLocations.NEWYORK, SampleLocations.CHICAGO,
-					DateUtil.toDate("2009-02-12"), DateUtil.toDate("2009-02-20"))));
+					DateUtil.toDateTime("2009-02-12","00:00"), DateUtil.toDateTime("2009-02-20","00:00"))));
 
 	@Test
 	public void testIsSatisfiedBySuccess() {

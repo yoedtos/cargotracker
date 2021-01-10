@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.application.internal;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -30,9 +31,9 @@ public class DefaultHandlingEventService implements HandlingEventService {
 	private Logger logger;
 
 	@Override
-	public void registerHandlingEvent(Date completionTime, TrackingId trackingId, VoyageNumber voyageNumber,
-			UnLocode unLocode, HandlingEvent.Type type) throws CannotCreateHandlingEventException {
-		Date registrationTime = new Date();
+	public void registerHandlingEvent(LocalDateTime completionTime, TrackingId trackingId, VoyageNumber voyageNumber,
+									  UnLocode unLocode, HandlingEvent.Type type) throws CannotCreateHandlingEventException {
+		LocalDateTime registrationTime = LocalDateTime.now();
 
 		/*
 		 * Using a factory to create a HandlingEvent (aggregate). This is where it is

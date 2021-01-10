@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -84,7 +86,7 @@ public class CargoLifecycleScenarioTest {
 		 */
 		Location origin = SampleLocations.HONGKONG;
 		Location destination = SampleLocations.STOCKHOLM;
-		Date arrivalDeadline = DateUtil.toDate("2009-03-18");
+		LocalDate arrivalDeadline = DateUtil.toDate("2009-03-18");
 
 		/*
 		 * Use case 1: booking
@@ -146,14 +148,14 @@ public class CargoLifecycleScenarioTest {
 		 * 
 		 * Handling begins: cargo is received in Hongkong.
 		 */
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-01"), trackingId, null,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-01"), trackingId, null,
 				SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.RECEIVE);
 
 		assertEquals(TransportStatus.IN_PORT, cargo.getDelivery().getTransportStatus());
 		assertEquals(SampleLocations.HONGKONG, cargo.getDelivery().getLastKnownLocation());
 
 		// Next event: Load onto voyage SampleVoyages.CM003 in Hongkong
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-03"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-03"), trackingId,
 				SampleVoyages.v100.getVoyageNumber(), SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.LOAD);
 
 		// Check current state - should be ok
@@ -175,14 +177,14 @@ public class CargoLifecycleScenarioTest {
 		VoyageNumber noSuchVoyageNumber = new VoyageNumber("XX000");
 		UnLocode noSuchUnLocode = new UnLocode("ZZZZZ");
 		try {
-			handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-05"), trackingId, noSuchVoyageNumber,
+			handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-05", "00:00"), trackingId, noSuchVoyageNumber,
 					noSuchUnLocode, HandlingEvent.Type.LOAD);
 			org.junit.Assert.fail("Should not be able to register a handling event with invalid location and voyage");
 		} catch (CannotCreateHandlingEventException expected) {
 		}
 
 		// Cargo is now (incorrectly) unloaded in Tokyo
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-05"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-05", "00:00"), trackingId,
 				SampleVoyages.v100.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.UNLOAD);
 
 		// Check current state - cargo is misdirected!
@@ -221,7 +223,7 @@ public class CargoLifecycleScenarioTest {
 		// SampleLocations.TOKYO), cargo.getNextExpectedActivity());
 		// -- Cargo has been rerouted, shipping continues --
 		// Load in Tokyo
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-08"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-08", "00:00"), trackingId,
 				SampleVoyages.v300.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.LOAD);
 
 		// Check current state - should be ok
@@ -233,7 +235,7 @@ public class CargoLifecycleScenarioTest {
 				cargo.getDelivery().getNextExpectedActivity());
 
 		// Unload in Hamburg
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-12"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-12", "00:00"), trackingId,
 				SampleVoyages.v300.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.UNLOAD);
 
 		// Check current state - should be ok
@@ -245,7 +247,7 @@ public class CargoLifecycleScenarioTest {
 				cargo.getDelivery().getNextExpectedActivity());
 
 		// Load in Hamburg
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-14"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-14", "00:00"), trackingId,
 				SampleVoyages.v400.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.LOAD);
 
 		// Check current state - should be ok
@@ -257,7 +259,7 @@ public class CargoLifecycleScenarioTest {
 				cargo.getDelivery().getNextExpectedActivity());
 
 		// Unload in SampleLocations.STOCKHOLM
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-15"), trackingId,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-15", "00:00"), trackingId,
 				SampleVoyages.v400.getVoyageNumber(), SampleLocations.STOCKHOLM.getUnLocode(),
 				HandlingEvent.Type.UNLOAD);
 
@@ -271,7 +273,7 @@ public class CargoLifecycleScenarioTest {
 
 		// Finally, cargo is claimed in SampleLocations.STOCKHOLM. This ends the cargo
 		// lifecycle from our perspective.
-		handlingEventService.registerHandlingEvent(DateUtil.toDate("2009-03-16"), trackingId, null,
+		handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2009-03-16", "00:00"), trackingId, null,
 				SampleLocations.STOCKHOLM.getUnLocode(), HandlingEvent.Type.CLAIM);
 
 		// Check current state - should be ok
@@ -290,28 +292,26 @@ public class CargoLifecycleScenarioTest {
 	}
 
 	protected void setUp() throws Exception {
-		routingService = new RoutingService() {
-			public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
-				if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
-					// Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
-					return Arrays.asList(new Itinerary(Arrays.asList(
-							new Leg(SampleVoyages.v100, SampleLocations.HONGKONG, SampleLocations.NEWYORK,
-									DateUtil.toDate("2009-03-03"), DateUtil.toDate("2009-03-09")),
-							new Leg(SampleVoyages.v200, SampleLocations.NEWYORK, SampleLocations.CHICAGO,
-									DateUtil.toDate("2009-03-10"), DateUtil.toDate("2009-03-14")),
-							new Leg(SampleVoyages.v200, SampleLocations.CHICAGO, SampleLocations.STOCKHOLM,
-									DateUtil.toDate("2009-03-07"), DateUtil.toDate("2009-03-11")))));
-				} else {
-					// Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
-					// Tokyo
-					return Arrays.asList(new Itinerary(Arrays.asList(
-							new Leg(SampleVoyages.v300, SampleLocations.TOKYO, SampleLocations.HAMBURG,
-									DateUtil.toDate("2009-03-08"), DateUtil.toDate("2009-03-12")),
-							new Leg(SampleVoyages.v400, SampleLocations.HAMBURG, SampleLocations.STOCKHOLM,
-									DateUtil.toDate("2009-03-14"), DateUtil.toDate("2009-03-15")))));
-				}
-			}
-		};
+		routingService = routeSpecification -> {
+            if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
+                // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
+                return Arrays.asList(new Itinerary(Arrays.asList(
+                        new Leg(SampleVoyages.v100, SampleLocations.HONGKONG, SampleLocations.NEWYORK,
+                                DateUtil.toDateTime("2009-03-03"), DateUtil.toDateTime("2009-03-09")),
+                        new Leg(SampleVoyages.v200, SampleLocations.NEWYORK, SampleLocations.CHICAGO,
+                                DateUtil.toDateTime("2009-03-10"), DateUtil.toDateTime("2009-03-14")),
+                        new Leg(SampleVoyages.v200, SampleLocations.CHICAGO, SampleLocations.STOCKHOLM,
+                                DateUtil.toDateTime("2009-03-07"), DateUtil.toDateTime("2009-03-11")))));
+            } else {
+                // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
+                // Tokyo
+                return Arrays.asList(new Itinerary(Arrays.asList(
+                        new Leg(SampleVoyages.v300, SampleLocations.TOKYO, SampleLocations.HAMBURG,
+                                DateUtil.toDateTime("2009-03-08"), DateUtil.toDateTime("2009-03-12")),
+                        new Leg(SampleVoyages.v400, SampleLocations.HAMBURG, SampleLocations.STOCKHOLM,
+                                DateUtil.toDateTime("2009-03-14"), DateUtil.toDateTime("2009-03-15")))));
+            }
+        };
 
 //        applicationEvents = new SynchronousApplicationEventsStub();
 		// In-memory implementations of the repositories

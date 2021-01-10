@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker.application;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
@@ -19,7 +21,7 @@ public class HandlingEventServiceTest {
 //	private HandlingEventRepository handlingEventRepository;
 //	private LocationRepository locationRepository;
 	private Cargo cargo = new Cargo(new TrackingId("ABC"),
-			new RouteSpecification(SampleLocations.HAMBURG, SampleLocations.TOKYO, new Date()));
+			new RouteSpecification(SampleLocations.HAMBURG, SampleLocations.TOKYO, LocalDate.now()));
 
 	protected void setUp() throws Exception {
 //        cargoRepository = createMock(CargoRepository.class);
@@ -48,7 +50,7 @@ public class HandlingEventServiceTest {
 //        replay(cargoRepository, voyageRepository, handlingEventRepository,
 //                locationRepository, applicationEvents);
 
-		service.registerHandlingEvent(new Date(), cargo.getTrackingId(), SampleVoyages.CM001.getVoyageNumber(),
+		service.registerHandlingEvent(LocalDateTime.now(), cargo.getTrackingId(), SampleVoyages.CM001.getVoyageNumber(),
 				SampleLocations.STOCKHOLM.getUnLocode(), HandlingEvent.Type.LOAD);
 	}
 }

@@ -1,6 +1,7 @@
 package org.eclipse.cargotracker.domain.model.handling;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,8 +43,8 @@ public class HandlingEventFactory implements Serializable {
 	 * @throws UnknownLocationException if there's no location with this UN Locode
 	 */
 	// TODO [Clean Code] Look at the exception handling more seriously.
-	public HandlingEvent createHandlingEvent(Date registrationTime, Date completionTime, TrackingId trackingId,
-			VoyageNumber voyageNumber, UnLocode unlocode, HandlingEvent.Type type)
+	public HandlingEvent createHandlingEvent(LocalDateTime registrationTime, LocalDateTime completionTime, TrackingId trackingId,
+											 VoyageNumber voyageNumber, UnLocode unlocode, HandlingEvent.Type type)
 			throws CannotCreateHandlingEventException {
 		Cargo cargo = findCargo(trackingId);
 		Voyage voyage = findVoyage(voyageNumber);

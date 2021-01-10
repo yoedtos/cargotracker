@@ -14,19 +14,17 @@ public class CargoRouteDtoAssembler {
 				cargo.getOrigin().getName() + " (" + cargo.getOrigin().getUnLocode().getIdString() + ")",
 				cargo.getRouteSpecification().getDestination().getName() + " ("
 						+ cargo.getRouteSpecification().getDestination().getUnLocode().getIdString() + ")",
-				cargo.getRouteSpecification().getArrivalDeadline(),
+				cargo.getRouteSpecification().getArrivalDeadline().atStartOfDay(),
 				cargo.getDelivery().getRoutingStatus().sameValueAs(RoutingStatus.MISROUTED),
 				cargo.getDelivery().getTransportStatus().sameValueAs(TransportStatus.CLAIMED),
 				cargo.getDelivery().getLastKnownLocation().getName() + " ("
 						+ cargo.getDelivery().getLastKnownLocation().getUnLocode().getIdString() + ")",
 				cargo.getDelivery().getTransportStatus().name());
 
-		for (Leg leg : cargo.getItinerary().getLegs()) {
-			dto.addLeg(leg.getVoyage().getVoyageNumber().getIdString(),
-					leg.getLoadLocation().getUnLocode().getIdString(), leg.getLoadLocation().getName(),
-					leg.getUnloadLocation().getUnLocode().getIdString(), leg.getUnloadLocation().getName(),
-					leg.getLoadTime(), leg.getUnloadTime());
-		}
+		cargo.getItinerary().getLegs().forEach(leg -> dto.addLeg(leg.getVoyage().getVoyageNumber().getIdString(),
+				leg.getLoadLocation().getUnLocode().getIdString(), leg.getLoadLocation().getName(),
+				leg.getUnloadLocation().getUnLocode().getIdString(), leg.getUnloadLocation().getName(),
+				leg.getLoadTime(), leg.getUnloadTime()));
 
 		return dto;
 	}

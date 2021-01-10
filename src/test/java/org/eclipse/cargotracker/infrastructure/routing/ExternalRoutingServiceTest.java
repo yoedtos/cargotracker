@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class ExternalRoutingServiceTest {
     // TODO [TDD] this test belongs in com.pathfinder
     public void testCalculatePossibleRoutes() {
         TrackingId trackingId = new TrackingId("ABC");
-        RouteSpecification routeSpecification = new RouteSpecification(SampleLocations.HONGKONG, SampleLocations.HELSINKI, new Date());
+        RouteSpecification routeSpecification = new RouteSpecification(SampleLocations.HONGKONG, SampleLocations.HELSINKI, LocalDate.now());
         Cargo cargo = new Cargo(trackingId, routeSpecification);
 
 //        expect(voyageRepository.find(isA(VoyageNumber.class))).andStubReturn(SampleVoyages.CM002);

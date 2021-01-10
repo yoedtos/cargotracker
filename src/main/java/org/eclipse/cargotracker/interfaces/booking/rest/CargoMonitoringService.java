@@ -32,9 +32,7 @@ public class CargoMonitoringService {
 
 		JsonArrayBuilder builder = Json.createArrayBuilder();
 
-		for (Cargo cargo : cargos) {
-			builder.add(cargoToJson(cargo));
-		}
+		cargos.stream().map(this::cargoToJson).forEach(builder::add);
 
 		return builder.build();
 	}

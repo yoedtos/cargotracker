@@ -31,7 +31,7 @@ public class HandlingHistory {
 	 */
 	public List<HandlingEvent> getDistinctEventsByCompletionTime() {
 		List<HandlingEvent> ordered = new ArrayList<>(new HashSet<>(handlingEvents));
-		Collections.sort(ordered, BY_COMPLETION_TIME_COMPARATOR);
+		ordered.sort(BY_COMPLETION_TIME_COMPARATOR);
 
 		return Collections.unmodifiableList(ordered);
 	}
@@ -72,10 +72,5 @@ public class HandlingHistory {
 		return handlingEvents.hashCode();
 	}
 
-	private static final Comparator<HandlingEvent> BY_COMPLETION_TIME_COMPARATOR = new Comparator<HandlingEvent>() {
-		@Override
-		public int compare(HandlingEvent he1, HandlingEvent he2) {
-			return he1.getCompletionTime().compareTo(he2.getCompletionTime());
-		}
-	};
+	private static final Comparator<HandlingEvent> BY_COMPLETION_TIME_COMPARATOR = Comparator.comparing(HandlingEvent::getCompletionTime);
 }

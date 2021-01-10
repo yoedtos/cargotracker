@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker.application.internal;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +36,7 @@ public class DefaultBookingService implements BookingService {
 	private Logger logger;
 
 	@Override
-	public TrackingId bookNewCargo(UnLocode originUnLocode, UnLocode destinationUnLocode, Date arrivalDeadline) {
+	public TrackingId bookNewCargo(UnLocode originUnLocode, UnLocode destinationUnLocode, LocalDate arrivalDeadline) {
 		TrackingId trackingId = cargoRepository.nextTrackingId();
 		Location origin = locationRepository.find(originUnLocode);
 		Location destination = locationRepository.find(destinationUnLocode);
@@ -85,7 +87,7 @@ public class DefaultBookingService implements BookingService {
 	}
 
 	@Override
-	public void changeDeadline(TrackingId trackingId, Date newDeadline) {
+	public void changeDeadline(TrackingId trackingId, LocalDate newDeadline) {
 		Cargo cargo = cargoRepository.find(trackingId);
 
 		RouteSpecification routeSpecification = new RouteSpecification(cargo.getOrigin(),

@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker.interfaces.booking.facade;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -14,7 +16,7 @@ import org.eclipse.cargotracker.interfaces.booking.facade.dto.RouteCandidate;
  */
 public interface BookingServiceFacade {
 
-	String bookNewCargo(String origin, String destination, Date arrivalDeadline);
+	String bookNewCargo(String origin, String destination, LocalDate arrivalDeadline);
 
 	CargoRoute loadCargoForRouting(String trackingId);
 
@@ -24,7 +26,7 @@ public interface BookingServiceFacade {
 
 	void changeDestination(String trackingId, String destinationUnLocode);
 
-	void changeDeadline(String trackingId, Date arrivalDeadline);
+	void changeDeadline(String trackingId, LocalDate arrivalDeadline);
 
 	List<RouteCandidate> requestPossibleRoutesForCargo(String trackingId);
 
