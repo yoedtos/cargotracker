@@ -21,6 +21,7 @@ import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaHandlingEventR
 import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaLocationRepository;
 import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaVoyageRepository;
 import org.eclipse.cargotracker.infrastructure.routing.ExternalRoutingService;
+import org.eclipse.cargotracker.infrastructure.routing.GraphTraversalResourceClient;
 import org.eclipse.pathfinder.api.GraphTraversalService;
 import org.eclipse.pathfinder.api.TransitEdge;
 import org.eclipse.pathfinder.api.TransitPath;
@@ -101,7 +102,10 @@ public class BookingServiceTest {
                 .addClass(DatabaseSetup.class).addClass(JMSResourcesSetup.class)
                 .addClass(JpaCargoRepository.class).addClass(JpaVoyageRepository.class)
                 .addClass(JpaHandlingEventRepository.class).addClass(JpaLocationRepository.class)
-                .addClass(ExternalRoutingService.class).addClass(LoggerProducer.class)
+                .addClass(ExternalRoutingService.class).addClass(GraphTraversalResourceClient.class)
+                
+                //logger producer
+                .addClass(LoggerProducer.class)
                 //.addClass(JsonMoxyConfigurationContextResolver.class)
                 // Interface components
                 .addClass(TransitPath.class).addClass(TransitEdge.class)
