@@ -2,7 +2,7 @@ package org.eclipse.cargotracker.domain.model.handling;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -21,13 +21,22 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 public class HandlingEventFactory implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	@Inject
-	private CargoRepository cargoRepository;
-	@Inject
-	private VoyageRepository voyageRepository;
-	@Inject
-	private LocationRepository locationRepository;
+	
+	private static final Logger LOGGER = Logger.getLogger(HandlingEventFactory.class.getName());
+	
+	private final CargoRepository cargoRepository;
 
+	private final VoyageRepository voyageRepository;
+
+	private final LocationRepository locationRepository;
+	
+	@Inject
+	public HandlingEventFactory(CargoRepository cargoRepository, VoyageRepository voyageRepository, LocationRepository locationRepository) {
+		this.cargoRepository = cargoRepository;
+		this.voyageRepository = voyageRepository;
+		this.locationRepository = locationRepository;
+	}
+	
 	/**
 	 * @param registrationTime time when this event was received by the system
 	 * @param completionTime   when the event was completed, for example finished
