@@ -11,15 +11,8 @@ import org.eclipse.cargotracker.domain.service.RoutingService;
 import org.eclipse.pathfinder.api.TransitEdge;
 import org.eclipse.pathfinder.api.TransitPath;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -34,25 +27,26 @@ import java.util.stream.Collectors;
 @Stateless
 public class ExternalRoutingService implements RoutingService {
 
+    private static final Logger LOGGER = Logger.getLogger(ExternalRoutingService.class.getName());
+
+    private final LocationRepository locationRepository;
+
+    private final VoyageRepository voyageRepository;
+
+    private final GraphTraversalResourceClient graphTraversalResource;
+
     @Inject
-    private Logger logger;
-
-    @Resource(lookup = "java:app/configuration/GraphTraversalUrl")
-    private String graphTraversalUrl;
-
-    private final Client jaxrsClient = ClientBuilder.newClient();
-    private WebTarget graphTraversalResource;
-
-    @Inject
-    private LocationRepository locationRepository;
-    @Inject
-    private VoyageRepository voyageRepository;
-
-    @PostConstruct
-    public void init() {
-        graphTraversalResource = jaxrsClient.target(graphTraversalUrl);
-        //graphTraversalResource.register(new MoxyJsonFeature()).register(new JsonMoxyConfigurationContextResolver());
+    public ExternalRoutingService(LocationRepository locationRepository, VoyageRepository voyageRepository, GraphTraversalResourceClient graphTraversalResource) {
+        this.locationRepository = locationRepository;
+        this.voyageRepository = voyageRepository;
+        this.graphTraversalResource = graphTraversalResource;
     }
+
+//    @PostConstruct
+//    public void init() {
+//        // this.graphTraversalResource = new GraphTraversalResourceClient();
+//        //graphTraversalResource.register(new MoxyJsonFeature()).register(new JsonMoxyConfigurationContextResolver());
+//    }
 
     @Override
     public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
@@ -60,10 +54,7 @@ public class ExternalRoutingService implements RoutingService {
         String origin = routeSpecification.getOrigin().getUnLocode().getIdString();
         String destination = routeSpecification.getDestination().getUnLocode().getIdString();
 
-        List<TransitPath> transitPaths = graphTraversalResource.queryParam("origin", origin)
-                .queryParam("destination", destination)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(new GenericType<>() { });
+        List<TransitPath> transitPaths = this.graphTraversalResource.findShortestPath(origin, destination);
 
         // The returned result is then translated back into our domain model.
         List<Itinerary> itineraries = new ArrayList<>();
@@ -75,7 +66,7 @@ public class ExternalRoutingService implements RoutingService {
                     if (routeSpecification.isSatisfiedBy(itinerary)) {
                         itineraries.add(itinerary);
                     } else {
-                        logger.log(Level.FINE, "Received itinerary that did not satisfy the route specification");
+                        LOGGER.log(Level.FINE, "Received itinerary that did not satisfy the route specification: {0}", itinerary);
                     }
                 });
 
@@ -94,4 +85,5 @@ public class ExternalRoutingService implements RoutingService {
                 locationRepository.find(new UnLocode(edge.getFromUnLocode())),
                 locationRepository.find(new UnLocode(edge.getToUnLocode())), edge.getFromDate(), edge.getToDate());
     }
+
 }
