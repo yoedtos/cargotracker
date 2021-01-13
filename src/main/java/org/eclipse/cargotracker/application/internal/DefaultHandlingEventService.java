@@ -1,7 +1,6 @@
 package org.eclipse.cargotracker.application.internal;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
@@ -20,16 +19,23 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 // TODO [Jakarta EE 8] Adopt the Date-Time API.
 @Stateless
 public class DefaultHandlingEventService implements HandlingEventService {
-
+	
+	private static final Logger LOGGER = Logger.getLogger(DefaultHandlingEventService.class.getName());
+	
+	private final ApplicationEvents applicationEvents;
+	
+	private final HandlingEventRepository handlingEventRepository;
+	
+	private final HandlingEventFactory handlingEventFactory;
+	
 	@Inject
-	private ApplicationEvents applicationEvents;
-	@Inject
-	private HandlingEventRepository handlingEventRepository;
-	@Inject
-	private HandlingEventFactory handlingEventFactory;
-	@Inject
-	private Logger logger;
-
+	public DefaultHandlingEventService(ApplicationEvents applicationEvents, HandlingEventRepository handlingEventRepository, HandlingEventFactory handlingEventFactory) {
+		this.applicationEvents = applicationEvents;
+		this.handlingEventRepository = handlingEventRepository;
+		this.handlingEventFactory = handlingEventFactory;
+	}
+	
+	
 	@Override
 	public void registerHandlingEvent(LocalDateTime completionTime, TrackingId trackingId, VoyageNumber voyageNumber,
 									  UnLocode unLocode, HandlingEvent.Type type) throws CannotCreateHandlingEventException {
@@ -52,8 +58,8 @@ public class DefaultHandlingEventService implements HandlingEventService {
 
 		/* Publish an event stating that a cargo has been handled. */
 		applicationEvents.cargoWasHandled(event);
-
-		logger.info("Registered handling event");
+		
+		LOGGER.info("Registered handling event");
 	}
 
 }
