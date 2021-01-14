@@ -99,7 +99,7 @@ public class BookingServiceTest {
                 // Application layer components
                 .addClass(DefaultBookingService.class)
                 // Infrastructure layer components.
-                .addClass(DatabaseSetup.class).addClass(JMSResourcesSetup.class)
+                .addClass(DatabaseSetup.class)
                 .addClass(JpaCargoRepository.class).addClass(JpaVoyageRepository.class)
                 .addClass(JpaHandlingEventRepository.class).addClass(JpaLocationRepository.class)
                 .addClass(ExternalRoutingService.class).addClass(GraphTraversalResourceClient.class)
