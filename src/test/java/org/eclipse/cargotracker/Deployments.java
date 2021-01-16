@@ -23,22 +23,37 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
-import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Deployments {
-    
+    private static final Logger LOGGER = Logger.getLogger(Deployments.class.getName());
+
     public static void addExtraJars(WebArchive war) {
         File[] extraJars = Maven.resolver().loadPomFromFile("pom.xml")
-                .resolve(List.of("org.apache.commons:commons-lang3", "org.postgresql:postgresql"))
+                .importCompileAndRuntimeDependencies()
+                .resolve(
+                        "org.assertj:assertj-core",
+                        "org.hamcrest:hamcrest-core",
+                        "org.mockito:mockito-core"
+                )
                 .withTransitivity()
                 .asFile();
         war.addAsLibraries(extraJars);
     }
-    
+
     public static void addInfraBase(WebArchive war) {
-        war.addClass(CargoInspected.class).addClass(LoggerProducer.class);
+        war.addPackage(CargoInspected.class.getPackage())
+                .addClass(LoggerProducer.class);
+        try {
+            Class<?> clazz = Class.forName("org.eclipse.cargotracker.infrastructure.routing.client.JacksonDatatypeJacksonProducer");
+            war.addClass(clazz);
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.WARNING, "missing class: {0}", e.getMessage());
+        }
+
     }
-    
+
     // Infrastructure layer components.
     // Add persistence/JPA components.
     public static void addInfraPersistence(WebArchive war) {
@@ -48,31 +63,31 @@ public class Deployments {
                 .addClass(JpaHandlingEventRepository.class)
                 .addClass(JpaLocationRepository.class);
     }
-    
+
     public static void addApplicationBase(WebArchive war) {
         war.addClass(DateUtil.class).addClass(LocationUtil.class);
     }
-    
+
     public static void addInfraMessaging(WebArchive war) {
         war.addPackages(true, JMSResourcesSetup.class.getPackage());
     }
-    
+
     public static void addInfraRouting(WebArchive war) {
         war.addPackages(true, ExternalRoutingService.class.getPackage());
     }
-    
+
     public static void addDomainModels(WebArchive war) {
         war
                 // locations
                 .addClass(Location.class)
                 .addClass(UnLocode.class)
-                
+
                 // voyage
                 .addClass(Voyage.class)
                 .addClass(VoyageNumber.class)
                 .addClass(Schedule.class)
                 .addClass(CarrierMovement.class)
-                
+
                 // cargo models
                 .addClass(Cargo.class)
                 .addClass(Delivery.class)
@@ -83,7 +98,7 @@ public class Deployments {
                 .addClass(RoutingStatus.class)
                 .addClass(TrackingId.class)
                 .addClass(TransportStatus.class)
-                
+
                 // handling models
                 .addClass(HandlingEvent.class)
                 .addClass(HandlingEventFactory.class)
@@ -92,7 +107,7 @@ public class Deployments {
                 .addClass(UnknownCargoException.class)
                 .addClass(UnknownVoyageException.class)
                 .addClass(UnknownLocationException.class)
-                
+
                 // shared classes
                 .addClass(AbstractSpecification.class)
                 .addClass(Specification.class)
@@ -100,14 +115,14 @@ public class Deployments {
                 .addClass(OrSpecification.class)
                 .addClass(NotSpecification.class)
                 .addClass(DomainObjectUtils.class)
-                
+
                 // add repos
                 .addClass(CargoRepository.class)
                 .addClass(LocationRepository.class)
                 .addClass(VoyageRepository.class)
                 .addClass(HandlingEventRepository.class);
     }
-    
+
     public static void addDomainService(WebArchive war) {
         war.addClass(RoutingService.class);
     }

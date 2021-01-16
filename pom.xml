@@ -58,11 +58,20 @@
         <payara.version>5.2020.7</payara.version>
         <arquillian-payara.version>2.3.1</arquillian-payara.version>
 
+        <!-- Wildfly server -->
+        <wildfly.version>22.0.0.Final</wildfly.version>
+        <wildfly-maven-plugin.version>2.1.0.Beta1</wildfly-maven-plugin.version>
+        <wildfly-arquillian.version>3.0.1.Final</wildfly-arquillian.version>
+        <!-- websockets-jsr and resteasy for client, aligned with Wildfly version. -->
+        <undertow-websockets-jsr.version>2.1.3.Final</undertow-websockets-jsr.version>
+        <resteasy.version>3.14.0.Final</resteasy.version>
+
         <!-- Application properties -->
         <webapp.databaseTempDir>/tmp</webapp.databaseTempDir>
         <webapp.graphTraversalUrl>
             http://localhost:8080/cargo-tracker/rest/graph-traversal/shortest-path
         </webapp.graphTraversalUrl>
+        <jackson.version>2.11.3</jackson.version>
     </properties>
 
     <dependencyManagement>
@@ -132,7 +141,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.18</version>
+            <version>42.2.14</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -310,6 +319,135 @@
             </build>
         </profile>
         <profile>
+            <id>payara-remote</id>
+            <build>
+                <plugins>
+                    <!-- To deploying to a running Payara server. -->
+                    <!-- run: mvn package cargo:deploy -->
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven2-plugin</artifactId>
+                        <version>${cargo-maven2-plugin.version}</version>
+                        <configuration>
+                            <container>
+                                <containerId>payara</containerId>
+                                <type>remote</type>
+                            </container>
+                            <configuration>
+                                <type>runtime</type>
+                                <properties>
+                                    <cargo.remote.password></cargo.remote.password>
+                                </properties>
+                            </configuration>
+                        </configuration>
+                        <!-- provides JSR88 client API to deploy on Glassfish/Payara Server -->
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.glassfish.main.deployment</groupId>
+                                <artifactId>deployment-client</artifactId>
+                                <version>5.1.0</version>
+                            </dependency>
+                            <!-- jaxb is required when using Java 11 with cargo maven plugin -->
+                            <dependency>
+                                <groupId>org.glassfish.jaxb</groupId>
+                                <artifactId>jaxb-runtime</artifactId>
+                                <version>2.3.3</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>wildfly</id>
+            <properties>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                    <version>${jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                    <version>${jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jackson2-provider</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                    <version>${jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jdk8</artifactId>
+                    <version>${jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>
+                                            src/main/java-wildfly
+                                        </source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- The WildFly plugin deploys your war to a local WildFly container -->
+                    <!-- To use, run: mvn package wildfly:deploy -->
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
+                        <version>${wildfly-maven-plugin.version}</version>
+                        <configuration>
+                            <server-config>standalone-full.xml</server-config>
+                            <!--<scripts>
+                                 <script>config.cli</script>
+                            </scripts>-->
+                            <!-- if a wildfly.home property is not present, firstly it will download
+                                a copy of wildfly distribution automatically -->
+                            <!-- also fetch from jbossHome -->
+                            <!-- <jossHome>${env.WILDFLY_HOME}</jbossHome>-->
+
+                            <!-- control remote wildfly server -->
+                            <!-- <hostname></hostname>
+                            <port></port>
+                            <username></username>
+                            <password></password> -->
+
+                            <!-- or set a wildfly.id property to add a server in settings.xml -->
+                            <!--<id>wildfly-svr</id> -->
+
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>arq-payara-managed</id>
             <properties>
                 <skipTests>false</skipTests>
@@ -470,42 +608,207 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
-            <id>payara-remote</id>
+
+            <!-- An optional Arquillian testing profile that executes tests in your
+                WildFly instance -->
+            <!-- This profile will start a new WildFly instance, and execute the test,
+                shutting it down when done -->
+            <!-- Run with: mvn clean verify -Parq-wildfly-managed -->
+            <id>arq-wildfly-managed</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <serverProfile>standalone-full.xml</serverProfile>
+                <serverRoot>${project.build.directory}/wildfly-${wildfly.version}</serverRoot>
+            </properties>
+            <dependencies>
+                <!--<dependency>
+                    <groupId>io.undertow</groupId>
+                    <artifactId>undertow-websockets-jsr</artifactId>
+                    <version>${undertow-websockets-jsr.version}</version>
+                    <scope>test</scope>
+                </dependency>-->
+
+                <!-- TESTS -->
+                <!-- JAXRS test need the dependency:resteasy-client -->
+                <!-- Import the RestEasy Client and jackson2/json-binding/json-p provider, we use test scope
+                    as we need that for test purposes -->
+                <!--<dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-client</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jackson2-provider</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>-->
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                    <version>${wildfly-arquillian.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+
             <build>
                 <plugins>
-                    <!-- To deploying to a running Payara server. -->
-                    <!-- run: mvn package cargo:deploy -->
                     <plugin>
-                        <groupId>org.codehaus.cargo</groupId>
-                        <artifactId>cargo-maven2-plugin</artifactId>
-                        <version>${cargo-maven2-plugin.version}</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven-dependency-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <version>${wildfly.version}</version>
+                                            <type>zip</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe-plugin.version}</version>
                         <configuration>
-                            <container>
-                                <containerId>payara</containerId>
-                                <type>remote</type>
-                            </container>
-                            <configuration>
-                                <type>runtime</type>
-                                <properties>
-                                    <cargo.remote.password></cargo.remote.password>
-                                </properties>
-                            </configuration>
+                            <environmentVariables>
+                                <JBOSS_HOME>${project.build.directory}/wildfly-${wildfly.version}</JBOSS_HOME>
+                            </environmentVariables>
+                            <systemPropertyVariables>
+                                <server-config>standalone.xml</server-config>
+                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                            </systemPropertyVariables>
                         </configuration>
-                        <!-- provides JSR88 client API to deploy on Glassfish/Payara Server -->
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.glassfish.main.deployment</groupId>
-                                <artifactId>deployment-client</artifactId>
-                                <version>5.1.0</version>
-                            </dependency>
-                            <!-- jaxb is required when using Java 11 with cargo maven plugin -->
-                            <dependency>
-                                <groupId>org.glassfish.jaxb</groupId>
-                                <artifactId>jaxb-runtime</artifactId>
-                                <version>2.3.3</version>
-                            </dependency>
-                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- An optional Arquillian testing profile that executes tests in a remote
+                WildFly instance -->
+            <!-- Run with: mvn clean test -Parq-wildfly-remote -->
+            <id>arq-wildfly-remote</id>
+            <properties>
+                <skipTests>false</skipTests>
+            </properties>
+            <dependencies>
+                <!--<dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-client</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jackson2-provider</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>-->
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-remote</artifactId>
+                    <version>${wildfly-arquillian.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe-plugin.version}</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <!--<arquillian.launch>wildfly-remote</arquillian.launch>-->
+                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- An optional Arquillian testing profile that executes tests in your
+                WildFly instance -->
+            <!-- Run with: mvn clean test -Parq-wildfly-embedded -->
+            <id>arq-wildfly-embedded</id>
+            <properties>
+                <skipTests>false</skipTests>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-client</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-jackson2-provider</artifactId>
+                    <version>${resteasy.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-embedded</artifactId>
+                    <version>${wildfly-arquillian.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven-dependency-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <version>${wildfly.version}</version>
+                                            <type>zip</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe-plugin.version}</version>
+                        <configuration>
+                            <environmentVariables>
+                                <JBOSS_HOME>${project.build.directory}/wildfly-${wildfly.version}</JBOSS_HOME>
+                            </environmentVariables>
+                            <systemPropertyVariables>
+                                <server-config>standalone.xml</server-config>
+                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                            </systemPropertyVariables>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

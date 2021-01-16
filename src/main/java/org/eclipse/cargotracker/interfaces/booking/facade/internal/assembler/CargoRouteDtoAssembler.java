@@ -6,6 +6,8 @@ import org.eclipse.cargotracker.domain.model.cargo.RoutingStatus;
 import org.eclipse.cargotracker.domain.model.cargo.TransportStatus;
 import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
 
+import java.time.ZoneId;
+
 // TODO [Clean Code] Convert to a singleton and inject?
 public class CargoRouteDtoAssembler {
 

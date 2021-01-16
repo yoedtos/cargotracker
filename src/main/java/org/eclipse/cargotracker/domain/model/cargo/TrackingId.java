@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+import javax.transaction.Transactional;
 
 import org.apache.commons.lang3.Validate;
 
@@ -36,7 +37,7 @@ public class TrackingId implements Serializable {
 		if (this == o) {
 			return true;
 		}
-		if (o == null || getClass() != o.getClass()) {
+		if (o == null || !(o instanceof TrackingId)) {
 			return false;
 		}
 

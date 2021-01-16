@@ -10,6 +10,7 @@ import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,6 +36,11 @@ public class HandlingEventFactoryTest {
     @Before
     public void setUp() {
         this.handlingEventFactory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository);
+    }
+    
+    @After
+    public void tearDown() {
+        reset(cargoRepository, voyageRepository, locationRepository);
     }
     
     @Test

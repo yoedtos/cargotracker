@@ -1,164 +1,175 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Embeddable;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.validation.constraints.Size;
-
 import org.apache.commons.lang3.Validate;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.location.Location;
 
+import javax.persistence.*;
+import javax.validation.constraints.Size;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
 @Embeddable
 public class Itinerary implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	// Null object pattern.
-	public static final Itinerary EMPTY_ITINERARY = new Itinerary();
+    // Null object pattern.
+    public static final Itinerary EMPTY_ITINERARY = new Itinerary();
 
-	// TODO [Clean Code] Look into why cascade delete doesn't work.
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "cargo_id")
-	// TODO [Clean Code] Index this is in leg_index
-	@OrderBy("loadTime")
-	@Size(min = 1)
-	private List<Leg> legs = Collections.emptyList();
+    // TODO [Clean Code] Look into why cascade delete doesn't work.
+    //@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    // Changes applied according to WildFly/Hibernate requirements.
+    // The `orphanRemoval = true` option will causes a `all-delete-orphan` exception under WildFly/Hibernate.
+    // The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception.
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "cargo_id")
+    // TODO [Clean Code] Index this is in leg_index
+    @OrderBy("loadTime")
+    @Size(min = 1)
+    private List<Leg> legs = Collections.emptyList();
 
-	public Itinerary() {
-		// Nothing to initialize.
-	}
+    public Itinerary() {
+        // Nothing to initialize.
+    }
 
-	public Itinerary(List<Leg> legs) {
-		Validate.notEmpty(legs);
-		Validate.noNullElements(legs);
+    public Itinerary(List<Leg> legs) {
+        Validate.notEmpty(legs);
+        Validate.noNullElements(legs);
 
-		this.legs = legs;
-	}
+        this.legs = legs;
+    }
 
-	public List<Leg> getLegs() {
-		return Collections.unmodifiableList(legs);
-	}
+    public List<Leg> getLegs() {
+        return Collections.unmodifiableList(this.legs);
+    }
 
-	/**
-	 * Test if the given handling event is expected when executing this itinerary.
-	 */
-	public boolean isExpected(HandlingEvent event) {
-		if (legs.isEmpty()) {
-			return true;
-		}
+    /**
+     * Test if the given handling event is expected when executing this itinerary.
+     */
+    public boolean isExpected(HandlingEvent event) {
+        if (legs.isEmpty()) {
+            return true;
+        }
 
-		switch (event.getType()) {
-		case RECEIVE: {
-			// Check that the first leg's origin is the event's location
-			Leg leg = legs.get(0);
-			return leg.getLoadLocation().equals(event.getLocation());
-		}
+        switch (event.getType()) {
+            case RECEIVE: {
+                // Check that the first leg's origin is the event's location
+                Leg leg = legs.get(0);
+                return leg.getLoadLocation().equals(event.getLocation());
+            }
 
-		case LOAD: {
-			return legs.stream().anyMatch(leg -> leg.getLoadLocation().equals(event.getLocation()) && leg.getVoyage().equals(event.getVoyage()));
-		}
+            case LOAD: {
+                return legs.stream().anyMatch(leg -> leg.getLoadLocation().equals(event.getLocation()) && leg.getVoyage().equals(event.getVoyage()));
+            }
 
-		case UNLOAD: {
-			// Check that the there is one leg with same unload location and
-			// voyage
-			return legs.stream().anyMatch(leg -> leg.getUnloadLocation().equals(event.getLocation()) && leg.getVoyage().equals(event.getVoyage()));
-		}
+            case UNLOAD: {
+                // Check that the there is one leg with same unload location and
+                // voyage
+                return legs.stream().anyMatch(leg -> leg.getUnloadLocation().equals(event.getLocation()) && leg.getVoyage().equals(event.getVoyage()));
+            }
 
-		case CLAIM: {
-			// Check that the last leg's destination is from the event's
-			// location
-			Leg leg = getLastLeg();
+            case CLAIM: {
+                // Check that the last leg's destination is from the event's
+                // location
+                Leg leg = getLastLeg();
 
-			return leg.getUnloadLocation().equals(event.getLocation());
-		}
+                return leg.getUnloadLocation().equals(event.getLocation());
+            }
 
-		case CUSTOMS: {
-			return true;
-		}
+            case CUSTOMS: {
+                return true;
+            }
 
-		default:
-			throw new RuntimeException("Event case is not handled");
-		}
-	}
+            default:
+                throw new RuntimeException("Event case is not handled");
+        }
+    }
 
-	Location getInitialDepartureLocation() {
-		if (legs.isEmpty()) {
-			return Location.UNKNOWN;
-		} else {
-			return legs.get(0).getLoadLocation();
-		}
-	}
+    Location getInitialDepartureLocation() {
+        if (legs.isEmpty()) {
+            return Location.UNKNOWN;
+        } else {
+            return legs.get(0).getLoadLocation();
+        }
+    }
 
-	Location getFinalArrivalLocation() {
-		if (legs.isEmpty()) {
-			return Location.UNKNOWN;
-		} else {
-			return getLastLeg().getUnloadLocation();
-		}
-	}
+    Location getFinalArrivalLocation() {
+        if (legs.isEmpty()) {
+            return Location.UNKNOWN;
+        } else {
+            return getLastLeg().getUnloadLocation();
+        }
+    }
 
-	/**
-	 * @return Date when cargo arrives at final destination.
-	 */
-	LocalDateTime getFinalArrivalDate() {
-		Leg lastLeg = getLastLeg();
+    /**
+     * @return Date when cargo arrives at final destination.
+     */
+    LocalDateTime getFinalArrivalDate() {
+        Leg lastLeg = getLastLeg();
 
-		if (lastLeg == null) {
-			return LocalDateTime.MAX;
-		} else {
-			return lastLeg.getUnloadTime();
-		}
-	}
+        if (lastLeg == null) {
+            return LocalDateTime.MAX;
+        } else {
+            return lastLeg.getUnloadTime();
+        }
+    }
 
-	/**
-	 * @return The last leg on the itinerary.
-	 */
-	Leg getLastLeg() {
-		if (legs.isEmpty()) {
-			return null;
-		} else {
-			return legs.get(legs.size() - 1);
-		}
-	}
+    /**
+     * @return The last leg on the itinerary.
+     */
+    Leg getLastLeg() {
+        if (legs.isEmpty()) {
+            return null;
+        } else {
+            return legs.get(legs.size() - 1);
+        }
+    }
 
-	private boolean sameValueAs(Itinerary other) {
-		return other != null && legs.equals(other.legs);
-	}
+    private boolean sameValueAs(Itinerary other) {
+        // return other != null && legs.equals(other.legs);
+        //
+        // Hibernate issue:
+        // When comparing a list in an entity, it is also a proxy class in runtime.
+        // Use a copyOf to compare using the contained items.
+        return other != null && Objects.equals(List.copyOf(this.legs), List.copyOf(other.legs));
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
 
-		Itinerary itinerary = (Itinerary) o;
+//        if (o == null || getClass() != o.getClass()) {
+//            return false;
+//        }
+        //
+        // https://stackoverflow.com/questions/27581/what-issues-should-be-considered-when-overriding-equals-and-hashcode-in-java
+        // Hibernate issue:
+        // `getClass() != o.getClass()` will fail if comparing the objects in different transactions/sessions.
+        // The generated dynamic proxies are always different classes.
+        if (o == null || !(o instanceof Itinerary)) {
+            return false;
+        }
 
-		return sameValueAs(itinerary);
-	}
 
-	@Override
-	public int hashCode() {
-		return legs.hashCode();
-	}
+        Itinerary itinerary = (Itinerary) o;
 
-	@Override
-	public String toString() {
-		return "Itinerary{" + "legs=" + legs + '}';
-	}
+        return sameValueAs(itinerary);
+    }
+
+    @Override
+    public int hashCode() {
+        //return legs.hashCode();
+        return Objects.hashCode(List.copyOf(legs));
+    }
+
+    @Override
+    public String toString() {
+        return "Itinerary{" + "legs=" + legs + '}';
+    }
 }

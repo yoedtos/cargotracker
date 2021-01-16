@@ -32,8 +32,8 @@ public class Leg implements Serializable {
         this.fromName = fromName;
         this.toUnLocode = toUnLocode;
         this.toName = toName;
-        this.loadTime = loadTime.format(DateTimeFormatter.ofPattern(DT_PATTERN));
-        this.unloadTime = unloadTime.format(DateTimeFormatter.ofPattern(DT_PATTERN));
+        this.loadTime = DateUtil.toString(loadTime);
+        this.unloadTime = DateUtil.toString(unloadTime);
     }
 
     public String getVoyageNumber() {

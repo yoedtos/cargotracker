@@ -190,4 +190,8 @@ public class Cargo implements Serializable {
     public String toString() {
         return trackingId.toString();
     }
+
+    public boolean isNew() {
+        return this.id == null;
+    }
 }

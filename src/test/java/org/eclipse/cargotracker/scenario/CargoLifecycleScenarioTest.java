@@ -1,10 +1,7 @@
 package org.eclipse.cargotracker.scenario;
 
 import org.eclipse.cargotracker.IntegrationTests;
-import org.eclipse.cargotracker.application.ApplicationEvents;
-import org.eclipse.cargotracker.application.BookingService;
-import org.eclipse.cargotracker.application.CargoInspectionService;
-import org.eclipse.cargotracker.application.HandlingEventService;
+import org.eclipse.cargotracker.application.*;
 import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.internal.DefaultCargoInspectionService;
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
@@ -28,8 +25,10 @@ import org.eclipse.cargotracker.infrastructure.messaging.stub.SynchronousApplica
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +45,7 @@ import static org.eclipse.cargotracker.Deployments.*;
 
 @RunWith(Arquillian.class)
 @Category(IntegrationTests.class)
+@Ignore
 public class CargoLifecycleScenarioTest {
     
     private static final Logger LOGGER = Logger.getLogger(CargoLifecycleScenarioTest.class.getName());
@@ -63,10 +63,13 @@ public class CargoLifecycleScenarioTest {
         
         // add JMS package
         //addInfraMessaging(war);
+        
         // Now pickup application service to setup in test.
-        war .addClass(ApplicationEvents.class)
-                // mock the applications events
+        war.addClass(ApplicationEvents.class)
+                // use a ApplicationEvents stub bean instead to isolate the jms facilities
                 .addClass(SynchronousApplicationEventsStub.class)
+                
+                //add other application service
                 .addClass(BookingService.class)
                 .addClass(HandlingEventService.class)
                 .addClass(CargoInspectionService.class)
@@ -86,7 +89,11 @@ public class CargoLifecycleScenarioTest {
         
         // add persistence unit descriptor
         war.addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml");
-        //war.addAsWebInfResource("test-beans.xml", "beans.xml");
+       
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+        
+        // add web xml
+        war.addAsWebInfResource("test-web.xml", "web.xml");
         
         LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
         

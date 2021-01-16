@@ -1,4 +1,4 @@
-package org.eclipse.cargotracker.infrastructure.routing;
+package org.eclipse.cargotracker.infrastructure.routing.client;
 
 import org.eclipse.pathfinder.api.TransitPath;
 
@@ -26,6 +26,12 @@ public class GraphTraversalResourceClient {
     @PostConstruct
     public void init() {
         this.jaxrsClient = ClientBuilder.newClient();
+        try {
+            Class<?> clazz = Class.forName("org.eclipse.cargotracker.infrastructure.routing.client.JacksonDatatypeJacksonProducer");
+            jaxrsClient.register(clazz);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
     
     @PreDestroy

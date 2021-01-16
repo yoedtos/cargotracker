@@ -12,7 +12,6 @@ import org.eclipse.cargotracker.domain.shared.DomainObjectUtils;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 
@@ -25,12 +24,14 @@ import static org.eclipse.cargotracker.domain.model.cargo.TransportStatus.*;
  */
 @Embeddable
 public class Delivery implements Serializable {
+    //private static final Logger LOGGER = Logger.getLogger(Delivery.class.getName());
 
     private static final long serialVersionUID = 1L;
     // Null object pattern.
     public static final LocalDateTime ETA_UNKOWN = null;
     // Null object pattern
     public static final HandlingActivity NO_ACTIVITY = new HandlingActivity();
+    //public static final HandlingActivity NO_ACTIVITY = null;
     @Enumerated(EnumType.STRING)
     @Column(name = "transport_status")
     @NotNull
@@ -48,7 +49,7 @@ public class Delivery implements Serializable {
     private LocalDateTime eta;
 
     @Embedded
-    private HandlingActivity nextExpectedActivity;
+    private HandlingActivity nextExpectedActivity = null;
     @Column(name = "unloaded_at_dest")
     @NotNull
     private boolean isUnloadedAtDestination;
@@ -163,8 +164,11 @@ public class Delivery implements Serializable {
         return eta != ETA_UNKOWN ? eta : ETA_UNKOWN;
     }
 
+    // Hibernate issue:
+    // After an empty HandlingActivity is persisted, when retrieving it from database it is a *NULL*.
     public HandlingActivity getNextExpectedActivity() {
-        return nextExpectedActivity;
+        // return nextExpectedActivity;
+        return DomainObjectUtils.nullSafe(nextExpectedActivity, NO_ACTIVITY);
     }
 
     /**
@@ -329,7 +333,7 @@ public class Delivery implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof Delivery)) {
             return false;
         }
 

@@ -4,6 +4,10 @@
 ![Integration Test with Arquillian Payara Managed Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-payara-managed/badge.svg)
 ![Integration Test with Arquillian Payara Micro Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-payara-micro/badge.svg)
 
+![Integration Test with Arquillian WildFly Managed Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-wildfly-managed/badge.svg)
+
+![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
+
 ## Overview
 
 The project demonstrates how you can develop applications with Jakarta EE using widely adopted architectural best practices like Domain-Driven Design (DDD). The project is directly based on the well known original [ DDD book sample codes](https://github.com/citerus/dddsample-core) developed by DDD pioneer Eric Evans' company Domain Language and the Swedish software consulting company Citerus. The cargo example actually comes from Eric Evans' seminal book on DDD. The original application is written in Spring, Hibernate and Jetty whereas the application is built on Jakarta EE.

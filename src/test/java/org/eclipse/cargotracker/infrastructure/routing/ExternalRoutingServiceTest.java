@@ -8,6 +8,7 @@ import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
+import org.eclipse.cargotracker.infrastructure.routing.client.GraphTraversalResourceClient;
 import org.eclipse.pathfinder.api.TransitEdge;
 import org.eclipse.pathfinder.api.TransitPath;
 import org.junit.Before;

@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.interfaces.booking.facade.internal.assembler;
 
+import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.Cargo;
 import org.eclipse.cargotracker.domain.model.cargo.Delivery;
 import org.eclipse.cargotracker.domain.model.cargo.HandlingActivity;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 // TODO [Clean Code] Could this be a CDI singleton?
 public class CargoStatusDtoAssembler {
 
-	public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
+	//public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
 	//private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DT_PATTERN);
 
 	public CargoStatus toDto(Cargo cargo, List<HandlingEvent> handlingEvents) {
@@ -59,7 +60,7 @@ public class CargoStatusDtoAssembler {
 		if (eta == null) {
 			return "?";
 		} else {
-			return eta.format(DateTimeFormatter.ofPattern(DT_PATTERN));
+			return DateUtil.toString(eta);
 		}
 	}
 

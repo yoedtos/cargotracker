@@ -13,30 +13,30 @@ import javax.inject.Inject;
 
 @ApplicationScoped
 public class SynchronousApplicationEventsStub implements ApplicationEvents {
-    
+
     @Inject
-    private Instance<CargoInspectionService> cargoInspectionService;
-    
+    Instance<CargoInspectionService> cargoInspectionServiceInstance;
+
     //no-args constructor required by CDI
     public SynchronousApplicationEventsStub() {
     }
-    
+
     @Override
     public void cargoWasHandled(HandlingEvent event) {
         System.out.println("EVENT: cargo was handled: " + event);
-        cargoInspectionService.get().inspectCargo(event.getCargo().getTrackingId());
+        cargoInspectionServiceInstance.get().inspectCargo(event.getCargo().getTrackingId());
     }
-    
+
     @Override
     public void cargoWasMisdirected(Cargo cargo) {
         System.out.println("EVENT: cargo was misdirected");
     }
-    
+
     @Override
     public void cargoHasArrived(Cargo cargo) {
         System.out.println("EVENT: cargo has arrived: " + cargo.getTrackingId().getIdString());
     }
-    
+
     @Override
     public void receivedHandlingEventRegistrationAttempt(HandlingEventRegistrationAttempt attempt) {
         System.out.println("EVENT: received handling event registration attempt");

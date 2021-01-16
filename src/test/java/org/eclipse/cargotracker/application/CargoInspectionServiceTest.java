@@ -7,6 +7,7 @@ import org.eclipse.cargotracker.domain.model.handling.HandlingEventRepository;
 import org.eclipse.cargotracker.domain.model.handling.HandlingHistory;
 import org.eclipse.cargotracker.domain.model.location.SampleLocations;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,16 +30,18 @@ public class CargoInspectionServiceTest {
     private final HandlingEventRepository handlingEventRepository = mock(HandlingEventRepository.class);
     private final Event<Cargo> cargoEvent = mock(Event.class);
     
-    private final Cargo cargo = new Cargo(new TrackingId("ABC"),
-            new RouteSpecification(SampleLocations.DALLAS, SampleLocations.HONGKONG, LocalDate.now()));
-    
     @Before
     public void setUp() {
         service = new DefaultCargoInspectionService(applicationEvents, cargoRepository, handlingEventRepository, cargoEvent);
     }
     
+    @After
+    public void tearDown() {
+        reset(applicationEvents, cargoRepository, handlingEventRepository, cargoEvent);
+    }
+    
     @Test
-    public void testCargoIsNull(){
+    public void testCargoIsNull() {
         when(cargoRepository.find(any(TrackingId.class))).thenReturn(null);
         
         service.inspectCargo(new TrackingId("ABC123"));
@@ -49,7 +52,9 @@ public class CargoInspectionServiceTest {
     }
     
     @Test
-    public void testCargoIsInspected(){
+    public void testCargoIsInspected() {
+        Cargo cargo = new Cargo(new TrackingId("ABC"),
+                new RouteSpecification(SampleLocations.DALLAS, SampleLocations.HONGKONG, LocalDate.now()));
         when(cargoRepository.find(any(TrackingId.class))).thenReturn(cargo);
         when(handlingEventRepository.lookupHandlingHistoryOfCargo(any(TrackingId.class)))
                 .thenReturn(new HandlingHistory(Collections.emptyList()));
@@ -63,13 +68,15 @@ public class CargoInspectionServiceTest {
         verify(cargoRepository, times(1)).find(any(TrackingId.class));
         verify(cargoRepository, times(1)).store(any(Cargo.class));
         verify(cargoEvent, times(1)).fire(any(Cargo.class));
-    
+        
         verifyNoMoreInteractions(cargoRepository, cargoEvent);
         verifyNoInteractions(applicationEvents);
     }
     
     @Test
-    public void testCargoWasArrivedAsExpected(){
+    public void testCargoWasArrivedAsExpected() {
+        Cargo cargo = new Cargo(new TrackingId("ABC"),
+                new RouteSpecification(SampleLocations.DALLAS, SampleLocations.HONGKONG, LocalDate.now()));
         cargo.assignToRoute(new Itinerary(
                 List.of(
                         new Leg(SampleVoyages.DALLAS_TO_HELSINKI, SampleLocations.DALLAS, SampleLocations.HELSINKI, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9)),
@@ -80,11 +87,11 @@ public class CargoInspectionServiceTest {
         when(handlingEventRepository.lookupHandlingHistoryOfCargo(any(TrackingId.class)))
                 .thenReturn(new HandlingHistory(
                         List.of(
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(9), HandlingEvent.Type.RECEIVE, SampleLocations.DALLAS ),
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9), HandlingEvent.Type.LOAD, SampleLocations.DALLAS, SampleVoyages.DALLAS_TO_HELSINKI),
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9), HandlingEvent.Type.UNLOAD, SampleLocations.HELSINKI, SampleVoyages.DALLAS_TO_HELSINKI),
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9), HandlingEvent.Type.LOAD, SampleLocations.HELSINKI, SampleVoyages.HELSINKI_TO_HONGKONG),
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9), HandlingEvent.Type.UNLOAD, SampleLocations.HONGKONG, SampleVoyages.HELSINKI_TO_HONGKONG)
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(9), HandlingEvent.Type.RECEIVE, SampleLocations.DALLAS),
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(8), HandlingEvent.Type.LOAD, SampleLocations.DALLAS, SampleVoyages.DALLAS_TO_HELSINKI),
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(7), HandlingEvent.Type.UNLOAD, SampleLocations.HELSINKI, SampleVoyages.DALLAS_TO_HELSINKI),
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(6), HandlingEvent.Type.LOAD, SampleLocations.HELSINKI, SampleVoyages.HELSINKI_TO_HONGKONG),
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(6), LocalDateTime.now().minusDays(5), HandlingEvent.Type.UNLOAD, SampleLocations.HONGKONG, SampleVoyages.HELSINKI_TO_HONGKONG)
                         )
                 ));
         doNothing().when(applicationEvents).cargoWasMisdirected(any(Cargo.class));
@@ -93,7 +100,7 @@ public class CargoInspectionServiceTest {
         doNothing().when(cargoEvent).fire(any(Cargo.class));
         
         service.inspectCargo(new TrackingId("ABC123"));
-        
+    
         verify(cargoRepository, times(1)).find(any(TrackingId.class));
         verify(applicationEvents, times(1)).cargoHasArrived(any(Cargo.class));
         verify(applicationEvents, times(0)).cargoWasMisdirected(any(Cargo.class));
@@ -104,7 +111,9 @@ public class CargoInspectionServiceTest {
     }
     
     @Test
-    public void testCargoWasMisredirected(){
+    public void testCargoWasMisredirected() {
+        Cargo cargo = new Cargo(new TrackingId("ABC"),
+                new RouteSpecification(SampleLocations.DALLAS, SampleLocations.HONGKONG, LocalDate.now()));
         cargo.assignToRoute(new Itinerary(
                 List.of(
                         new Leg(SampleVoyages.DALLAS_TO_HELSINKI, SampleLocations.DALLAS, SampleLocations.HELSINKI, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9)),
@@ -115,9 +124,9 @@ public class CargoInspectionServiceTest {
         when(handlingEventRepository.lookupHandlingHistoryOfCargo(any(TrackingId.class)))
                 .thenReturn(new HandlingHistory(
                         List.of(
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(9), HandlingEvent.Type.RECEIVE, SampleLocations.DALLAS ),
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(9), HandlingEvent.Type.RECEIVE, SampleLocations.DALLAS),
                                 //load on wrong voyage.
-                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9), HandlingEvent.Type.LOAD, SampleLocations.DALLAS, SampleVoyages.DALLAS_TO_HELSINKI_ALT)
+                                new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(7), HandlingEvent.Type.LOAD, SampleLocations.DALLAS, SampleVoyages.DALLAS_TO_HELSINKI_ALT)
                         )
                 ));
         doNothing().when(applicationEvents).cargoWasMisdirected(any(Cargo.class));

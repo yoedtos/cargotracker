@@ -3,6 +3,7 @@ package org.eclipse.cargotracker.domain.model.voyage;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
@@ -26,7 +27,9 @@ public class Schedule implements Serializable {
 	public static final Schedule EMPTY = new Schedule();
 	
 	// TODO [Clean Code] Look into why cascade delete doesn't work.
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+	// Hibernate issue:
+	// orphanRemoval = true will cause exception under WildFly/Hibernate
+	@OneToMany(cascade = CascadeType.ALL)
 	@JoinColumn(name = "voyage_id")
 	// TODO [Clean Code] Index as cm_index
 	@NotNull
@@ -50,7 +53,7 @@ public class Schedule implements Serializable {
 	}
 
 	private boolean sameValueAs(Schedule other) {
-		return other != null && this.carrierMovements.equals(other.carrierMovements);
+		return other != null && Objects.equals(List.copyOf(carrierMovements), List.copyOf(other.carrierMovements));
 	}
 
 	@Override
@@ -69,6 +72,6 @@ public class Schedule implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return new HashCodeBuilder().append(this.carrierMovements).toHashCode();
+		return Objects.hashCode(List.copyOf(this.carrierMovements));
 	}
 }
