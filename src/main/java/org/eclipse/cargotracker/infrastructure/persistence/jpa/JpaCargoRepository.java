@@ -45,20 +45,20 @@ public class JpaCargoRepository implements CargoRepository, Serializable {
     @Override
     public void store(Cargo cargo) {
         // TODO [Clean Code] See why cascade is not working correctly for legs.
-//		for (Leg leg : cargo.getItinerary().getLegs()) {
-//			entityManager.persist(leg);
-//		}
-//
-//		entityManager.persist(cargo);
+		for (Leg leg : cargo.getItinerary().getLegs()) {
+			entityManager.persist(leg);
+		}
 
-        if (cargo.isNew()) {
+		entityManager.persist(cargo);
+
+//        if (cargo.isNew()) {
 //            for (Leg leg : cargo.getItinerary().getLegs()) {
 //                entityManager.persist(leg);
 //            }
-            entityManager.persist(cargo);
-        } else {
-            entityManager.merge(cargo);
-        }
+//            entityManager.persist(cargo);
+//        } else {
+//            entityManager.merge(cargo);
+//        }
 
         // Hibernate issue:
         // Delete-orphan does not seem to work correctly when the parent is a component

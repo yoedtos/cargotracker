@@ -19,14 +19,16 @@ public class UnLocode implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	private static final java.util.regex.Pattern VALID_PATTERN = java.util.regex.Pattern
+			.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}");
+
 	@NotNull
 	// Country code is exactly two letters.
 	// Location code is usually three letters, but may contain the numbers 2-9
 	// as well.
 	@Pattern(regexp = "[a-zA-Z]{2}[a-zA-Z2-9]{3}")
 	private String unlocode;
-	private static final java.util.regex.Pattern VALID_PATTERN = java.util.regex.Pattern
-			.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}");
+
 
 	public UnLocode() {
 		// Nothing to initialize.

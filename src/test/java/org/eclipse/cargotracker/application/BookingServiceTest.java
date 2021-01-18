@@ -119,6 +119,8 @@ public class BookingServiceTest {
         return war;
     }
 
+    // Wildfly/Hibernate issue:
+    // use a UserTransaction to wrap the tests and avoid the Hibernate lazy initialization exception in test.
     @Before
     public void setUp() throws Exception {
         startTransaction();
@@ -140,7 +142,8 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(1)
-    @Transactional
+    // The `Transactional` annotation does not work in Arquillian test.
+    // @Transactional
     public void testRegisterNew() {
         UnLocode fromUnlocode = new UnLocode("USCHI");
         UnLocode toUnlocode = new UnLocode("SESTO");
@@ -168,7 +171,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(2)
-    @Transactional
+    //@Transactional
     public void testRouteCandidates() {
         candidates = bookingService.requestPossibleRoutesForCargo(trackingId);
 
@@ -177,7 +180,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(3)
-    @Transactional
+    //@Transactional
     public void testAssignRoute() {
         assigned = candidates.get(new Random().nextInt(candidates.size()));
 
@@ -201,7 +204,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(4)
-    @Transactional
+    //@Transactional
     public void testChangeDestination() {
         bookingService.changeDestination(trackingId, new UnLocode("FIHEL"));
         
@@ -224,7 +227,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(5)
-    @Transactional
+    //@Transactional
     public void testChangeDeadline() {
         LocalDate newDeadline = deadline.plusMonths(1);
         bookingService.changeDeadline(trackingId, newDeadline);

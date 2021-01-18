@@ -12,34 +12,36 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.NoResultException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
 
 @ApplicationScoped
 public class HandlingEventFactory implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private static final Logger LOGGER = Logger.getLogger(HandlingEventFactory.class.getName());
-    
+
     private CargoRepository cargoRepository;
-    
+
     private VoyageRepository voyageRepository;
-    
+
     private LocationRepository locationRepository;
-    
+
     //no-args constructor required by CDI
     public HandlingEventFactory() {
     }
-    
+
     @Inject
     public HandlingEventFactory(CargoRepository cargoRepository, VoyageRepository voyageRepository, LocationRepository locationRepository) {
         this.cargoRepository = cargoRepository;
         this.voyageRepository = voyageRepository;
         this.locationRepository = locationRepository;
     }
-    
+
     /**
      * @param registrationTime time when this event was received by the system
      * @param completionTime   when the event was completed, for example finished
@@ -61,7 +63,7 @@ public class HandlingEventFactory implements Serializable {
         Cargo cargo = findCargo(trackingId);
         Voyage voyage = findVoyage(voyageNumber);
         Location location = findLocation(unlocode);
-        
+
         try {
             if (voyage == null) {
                 return new HandlingEvent(cargo, completionTime, registrationTime, type, location);
@@ -72,17 +74,17 @@ public class HandlingEventFactory implements Serializable {
             throw new CannotCreateHandlingEventException(e);
         }
     }
-    
+
     private Cargo findCargo(TrackingId trackingId) throws UnknownCargoException {
         Cargo cargo = cargoRepository.find(trackingId);
         
         if (cargo == null) {
             throw new UnknownCargoException(trackingId);
         }
-        
+
         return cargo;
     }
-    
+
     private Voyage findVoyage(VoyageNumber voyageNumber) throws UnknownVoyageException {
         if (voyageNumber == null) {
             return null;
@@ -93,17 +95,17 @@ public class HandlingEventFactory implements Serializable {
         if (voyage == null) {
             throw new UnknownVoyageException(voyageNumber);
         }
-        
+
         return voyage;
     }
-    
+
     private Location findLocation(UnLocode unlocode) throws UnknownLocationException {
         Location location = locationRepository.find(unlocode);
         
         if (location == null) {
             throw new UnknownLocationException(unlocode);
         }
-        
+
         return location;
     }
 }

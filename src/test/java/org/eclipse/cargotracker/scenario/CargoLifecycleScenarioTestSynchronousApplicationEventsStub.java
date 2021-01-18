@@ -1,5 +1,4 @@
-package org.eclipse.cargotracker.infrastructure.messaging.stub;
-
+package org.eclipse.cargotracker.scenario;
 
 import org.eclipse.cargotracker.application.ApplicationEvents;
 import org.eclipse.cargotracker.application.CargoInspectionService;
@@ -12,13 +11,13 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
 @ApplicationScoped
-public class SynchronousApplicationEventsStub implements ApplicationEvents {
+public class CargoLifecycleScenarioTestSynchronousApplicationEventsStub implements ApplicationEvents {
 
     @Inject
     Instance<CargoInspectionService> cargoInspectionServiceInstance;
 
     //no-args constructor required by CDI
-    public SynchronousApplicationEventsStub() {
+    public CargoLifecycleScenarioTestSynchronousApplicationEventsStub() {
     }
 
     @Override

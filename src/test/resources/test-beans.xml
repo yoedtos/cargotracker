@@ -4,7 +4,4 @@
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee 
                       http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
 	bean-discovery-mode="annotated">
-	<alternatives>
-		<class>org.eclipse.cargotracker.infrastructure.messaging.stub.SynchronousApplicationEventsStub</class>
-	</alternatives>
 </beans>

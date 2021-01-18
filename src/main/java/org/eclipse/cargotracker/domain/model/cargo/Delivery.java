@@ -30,7 +30,7 @@ public class Delivery implements Serializable {
     // Null object pattern.
     public static final LocalDateTime ETA_UNKOWN = null;
     // Null object pattern
-    public static final HandlingActivity NO_ACTIVITY = new HandlingActivity();
+    public static final HandlingActivity NO_ACTIVITY = HandlingActivity.EMPTY;
     //public static final HandlingActivity NO_ACTIVITY = null;
     @Enumerated(EnumType.STRING)
     @Column(name = "transport_status")
@@ -347,5 +347,21 @@ public class Delivery implements Serializable {
         return new HashCodeBuilder().append(transportStatus).append(lastKnownLocation).append(currentVoyage)
                 .append(misdirected).append(eta).append(nextExpectedActivity).append(isUnloadedAtDestination)
                 .append(routingStatus).append(calculatedAt).append(lastEvent).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Delivery{" +
+                "transportStatus=" + transportStatus +
+                ", lastKnownLocation=" + lastKnownLocation +
+                ", currentVoyage=" + currentVoyage +
+                ", misdirected=" + misdirected +
+                ", eta=" + eta +
+                ", nextExpectedActivity=" + nextExpectedActivity +
+                ", isUnloadedAtDestination=" + isUnloadedAtDestination +
+                ", routingStatus=" + routingStatus +
+                ", calculatedAt=" + calculatedAt +
+                ", lastEvent=" + lastEvent +
+                '}';
     }
 }
