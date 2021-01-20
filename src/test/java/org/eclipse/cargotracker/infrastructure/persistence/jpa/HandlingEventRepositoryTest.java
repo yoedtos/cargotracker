@@ -116,12 +116,16 @@ public class HandlingEventRepositoryTest {
 
         this.entityManager.flush();
 
-        HandlingEvent result = (HandlingEvent) this.entityManager.createNativeQuery("select * from HandlingEvent where id = :id", HandlingEvent.class)
+        // In a native query, the named parameters like `:id` does not work on Payara/EclipseLink.
+        // HandlingEvent result = (HandlingEvent) this.entityManager.createNativeQuery("select * from HandlingEvent where id = :id", HandlingEvent.class)
+        //
+        // revert to use JPQL, it is standard and portable.
+        HandlingEvent result = this.entityManager.createQuery("select e from HandlingEvent e where e.id = :id", HandlingEvent.class)
                 .setParameter("id", getLongId(event)).getSingleResult();
         assertThat(result.getCargo()).isEqualTo(cargo);
         assertThat(result.getCompletionTime().truncatedTo(ChronoUnit.SECONDS)).isEqualTo(completionTime.truncatedTo(ChronoUnit.SECONDS));
         assertThat(result.getRegistrationTime().truncatedTo(ChronoUnit.SECONDS)).isEqualTo(registrationTime.truncatedTo(ChronoUnit.SECONDS));
-        assertThat(result.getType()).isEqualTo( HandlingEvent.Type.CLAIM);
+        assertThat(result.getType()).isEqualTo(HandlingEvent.Type.CLAIM);
         commitTransaction();
     }
 

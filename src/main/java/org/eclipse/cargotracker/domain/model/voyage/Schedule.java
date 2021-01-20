@@ -40,7 +40,7 @@ public class Schedule implements Serializable {
 		// Nothing to initialize.
 	}
 
-	Schedule(List<CarrierMovement> carrierMovements) {
+	public Schedule(List<CarrierMovement> carrierMovements) {
 		Validate.notNull(carrierMovements);
 		Validate.noNullElements(carrierMovements);
 		Validate.notEmpty(carrierMovements);
