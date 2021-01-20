@@ -72,12 +72,6 @@ public class BookingServiceTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        File[] extraJars = Maven.resolver().loadPomFromFile("pom.xml")
-                .resolve(List.of("org.apache.commons:commons-lang3", "org.postgresql:postgresql"))
-                .withTransitivity()
-                .asFile();
-
-        LOGGER.log(Level.INFO, "Adding extra jars: {0}", new Object[]{extraJars});
 
         WebArchive war = ShrinkWrap.create(WebArchive.class, "cargo-tracker-test.war");
 
