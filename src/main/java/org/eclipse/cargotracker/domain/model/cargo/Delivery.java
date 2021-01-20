@@ -14,6 +14,8 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.eclipse.cargotracker.domain.model.cargo.RoutingStatus.*;
 import static org.eclipse.cargotracker.domain.model.cargo.TransportStatus.*;
@@ -24,7 +26,7 @@ import static org.eclipse.cargotracker.domain.model.cargo.TransportStatus.*;
  */
 @Embeddable
 public class Delivery implements Serializable {
-    //private static final Logger LOGGER = Logger.getLogger(Delivery.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Delivery.class.getName());
 
     private static final long serialVersionUID = 1L;
     // Null object pattern.
@@ -84,6 +86,7 @@ public class Delivery implements Serializable {
         this.eta = calculateEta(itinerary);
         this.nextExpectedActivity = calculateNextExpectedActivity(routeSpecification, itinerary);
         this.isUnloadedAtDestination = calculateUnloadedAtDestination(routeSpecification);
+        //LOGGER.log(Level.INFO, "on track: {0}",  this.onTrack());
     }
 
     /**

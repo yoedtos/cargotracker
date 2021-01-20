@@ -53,6 +53,7 @@ public class CargoLifecycleScenarioTestDataGenerator {
             cargo.getDelivery().setLastEvent(null);
             entityManager.merge(cargo);
         });
+        this.entityManager.flush();
 
         // Delete all entities
         // TODO [Clean Code] See why cascade delete is not working.

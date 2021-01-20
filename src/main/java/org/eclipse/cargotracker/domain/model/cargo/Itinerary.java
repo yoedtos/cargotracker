@@ -21,13 +21,19 @@ public class Itinerary implements Serializable {
     public static final Itinerary EMPTY_ITINERARY = new Itinerary();
 
     // TODO [Clean Code] Look into why cascade delete doesn't work.
-    //@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    // Hibernate issue:
     // Changes applied according to WildFly/Hibernate requirements.
     // The `orphanRemoval = true` option will causes a `all-delete-orphan` exception under WildFly/Hibernate.
-    // The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception.
+    // (The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception)
+    // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "cargo_id")
     // TODO [Clean Code] Index this is in leg_index
+    // Hibernate issue:
+    // Hibernate does not persist the order of the list element when saving into db.
+    // The `OrderColumn` persist the position of list ele in db.
+    @OrderColumn(name = "leg_index")
+    // The `OrderBy` ensures the order of list element in mem.
     @OrderBy("loadTime")
     @Size(min = 1)
     private List<Leg> legs = Collections.emptyList();
@@ -44,6 +50,7 @@ public class Itinerary implements Serializable {
     }
 
     public List<Leg> getLegs() {
+        //this.legs.sort(Comparator.comparing(Leg::getLoadTime));
         return Collections.unmodifiableList(this.legs);
     }
 

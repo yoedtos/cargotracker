@@ -36,7 +36,7 @@ public class CarrierMovementRepositoryTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-HandlingEventRepositoryTest.war");
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-CarrierMovementRepositoryTest.war");
 
         addExtraJars(war);
         addDomainModels(war);

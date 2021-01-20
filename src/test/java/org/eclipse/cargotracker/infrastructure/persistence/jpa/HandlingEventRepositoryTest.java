@@ -116,7 +116,9 @@ public class HandlingEventRepositoryTest {
 
         this.entityManager.flush();
 
+        // Payara/EclipseLink issue:
         // In a native query, the named parameters like `:id` does not work on Payara/EclipseLink.
+        // eg.
         // HandlingEvent result = (HandlingEvent) this.entityManager.createNativeQuery("select * from HandlingEvent where id = :id", HandlingEvent.class)
         //
         // revert to use JPQL, it is standard and portable.

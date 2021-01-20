@@ -125,6 +125,7 @@ public class CargoLifecycleScenarioTest {
 
         // add persistence unit descriptor
         war.addAsResource("test-persistence.xml", "META-INF/persistence.xml");
+        war.addAsResource("test-jboss-logging.properties", "jboss-logging.properties");
         war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         // add web xml
         war.addAsWebInfResource("test-web.xml", "web.xml");
@@ -143,6 +144,8 @@ public class CargoLifecycleScenarioTest {
 
     @Inject
     CargoRepository cargoRepository;
+
+    @Inject
     LocationRepository locationRepository;
     VoyageRepository voyageRepository;
     /**
@@ -214,6 +217,10 @@ public class CargoLifecycleScenarioTest {
          * Tracking the cargo basically amounts to presenting information extracted from
          * the cargo aggregate in a suitable way.
          */
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         assertThat(cargo).isNotNull();
         assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
@@ -242,15 +249,18 @@ public class CargoLifecycleScenarioTest {
         Itinerary itinerary = selectPreferredItinerary(itineraries);
         cargo.assignToRoute(itinerary);
 
-        this.entityManager.flush(); //force to sync to db.
+        commitTransaction();
 
-        LOGGER.log(Level.INFO, "after route is assigned, the itinerary is : {0}", cargo.getItinerary());
-        LOGGER.log(Level.INFO, "after route is assigned, the delivery status: {0}", cargo.getDelivery());
+        //verify in new tx
+        startTransaction();
+        var result = findCargo();
+        LOGGER.log(Level.INFO, "after route is assigned, the itinerary is : {0}", result.getItinerary());
+        LOGGER.log(Level.INFO, "after route is assigned, the delivery status: {0}", result.getDelivery());
 
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
-        assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
-        assertThat(cargo.getDelivery().getEstimatedTimeOfArrival()).isNotNull();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
+        assertThat(result.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
+        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
+        assertThat(result.getDelivery().getEstimatedTimeOfArrival()).isNotNull();
+        assertThat(result.getDelivery().getNextExpectedActivity())
                 .isEqualTo(new HandlingActivity(HandlingEvent.Type.RECEIVE, SampleLocations.HONGKONG));
     }
 
@@ -275,7 +285,10 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "receive in HONGKONG::tracking id: {0}", trackingId);
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-01", "00:00"), trackingId, null,
                 SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.RECEIVE);
+        commitTransaction();
 
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
         assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HONGKONG);
@@ -292,6 +305,10 @@ public class CargoLifecycleScenarioTest {
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-03", "00:00"), trackingId,
                 SampleVoyages.v100.getVoyageNumber(), SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.LOAD);
 
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v100);
@@ -336,6 +353,11 @@ public class CargoLifecycleScenarioTest {
 
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-05", "00:00"), trackingId,
                 SampleVoyages.v100.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.UNLOAD);
+
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - cargo is misdirected!
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
@@ -354,33 +376,58 @@ public class CargoLifecycleScenarioTest {
     @Test
     @InSequence(7)
     public void testNewRoute() throws Exception {
-        LOGGER.log(Level.INFO, "specify new route, tracking id: {0}", trackingId);
-
+        LOGGER.log(Level.INFO, "specify new route spec, tracking id: {0}", trackingId);
         Cargo cargo = findCargo();
-        RouteSpecification fromTokyo = new RouteSpecification(SampleLocations.TOKYO, SampleLocations.STOCKHOLM,
+        RouteSpecification fromTokyo = new RouteSpecification(
+                locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
+                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
                 arrivalDeadline);
         cargo.specifyNewRoute(fromTokyo);
-        this.entityManager.flush(); //force to sync to db.
 
-        LOGGER.log(Level.INFO, "after assigned to new route spec, the itinerary is : {0}", cargo.getItinerary());
-        LOGGER.log(Level.INFO, "after assigned to new route spec, the delivery status: {0}", cargo.getDelivery());
+        cargoRepository.store(cargo);
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
+
+        var result = findCargo();
+
+        LOGGER.log(Level.INFO, "after assigned to new route spec, route spec is : {0}", result.getRouteSpecification());
+        LOGGER.log(Level.INFO, "after assigned to new route spec, the itinerary is : {0}", result.getItinerary());
+        LOGGER.log(Level.INFO, "after assigned to new route spec, the delivery status: {0}", result.getDelivery());
 
         // The old itinerary does not satisfy the new specification
-        assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.MISROUTED);
-        assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.MISROUTED);
+        assertThat(result.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+    }
 
-        // Repeat procedure of selecting one out of a number of possible routes
-        // satisfying the route spec
+    // Repeat procedure of selecting one out of a number of possible routes
+    // satisfying the route spec
+    @Test
+    @InSequence(8)
+    public void testNewItinerary() throws Exception {
+        LOGGER.log(Level.INFO, "assign to new itinerary, tracking id: {0}", trackingId);
+        Cargo cargo = findCargo();
+
         List<Itinerary> newItineraries = bookingService.requestPossibleRoutesForCargo(cargo.getTrackingId());
         Itinerary newItinerary = selectPreferredItinerary(newItineraries);
         cargo.assignToRoute(newItinerary);
-        this.entityManager.flush(); //force to sync to db.
 
-        LOGGER.log(Level.INFO, "after assigned new itinerary, the itinerary is : {0}", cargo.getItinerary());
-        LOGGER.log(Level.INFO, "after assigned new itinerary, the delivery status: {0}", cargo.getDelivery());
+        cargoRepository.store(cargo);
+
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
+
+        var result = findCargo();
+
+        LOGGER.log(Level.INFO, "after assigned to new itinerary, route spec is : {0}", result.getRouteSpecification());
+        LOGGER.log(Level.INFO, "after assigned to new itinerary, the itinerary is : {0}", result.getItinerary());
+        LOGGER.log(Level.INFO, "after assigned to new itinerary, the delivery status: {0}", result.getDelivery());
 
         // New itinerary should satisfy new route
-        assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
+        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
 
         // TODO we can't handle the face that after a reroute, the cargo isn't misdirected anymore
         //assertThat(cargo.isMisdirected()).isFalse();
@@ -399,13 +446,17 @@ public class CargoLifecycleScenarioTest {
     // -- Cargo has been rerouted, shipping continues --
     // Load in Tokyo
     @Test
-    @InSequence(8)
+    @InSequence(9)
     public void testLoadInTokyo() throws Exception {
         LOGGER.log(Level.INFO, "load in Tokyo now, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-08", "00:00"), trackingId,
                 SampleVoyages.v300.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.LOAD);
 
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v300);
@@ -419,13 +470,17 @@ public class CargoLifecycleScenarioTest {
 
     // Unload in Hamburg
     @Test
-    @InSequence(9)
+    @InSequence(10)
     public void testUnloadInHamburg() throws Exception {
         LOGGER.log(Level.INFO, "unload in Hamburg, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-12", "00:00"), trackingId,
                 SampleVoyages.v300.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.UNLOAD);
 
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
@@ -438,13 +493,17 @@ public class CargoLifecycleScenarioTest {
 
     // Load in Hamburg
     @Test
-    @InSequence(10)
+    @InSequence(11)
     public void testLoadInHamburg() throws Exception {
         LOGGER.log(Level.INFO, "load in Hamburg,  tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-14", "00:00"), trackingId,
                 SampleVoyages.v400.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.LOAD);
 
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v400);
@@ -458,7 +517,7 @@ public class CargoLifecycleScenarioTest {
 
     // Unload in SampleLocations.STOCKHOLM
     @Test
-    @InSequence(11)
+    @InSequence(12)
     public void testUnload_in_STOCKHOLM() throws Exception {
         LOGGER.log(Level.INFO, "unload in STOCKHOLM, tracking id: {0}", trackingId);
 
@@ -466,6 +525,10 @@ public class CargoLifecycleScenarioTest {
                 SampleVoyages.v400.getVoyageNumber(), SampleLocations.STOCKHOLM.getUnLocode(),
                 HandlingEvent.Type.UNLOAD);
 
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
@@ -480,13 +543,16 @@ public class CargoLifecycleScenarioTest {
     // Finally, cargo is claimed in SampleLocations.STOCKHOLM. This ends the cargo
     // lifecycle from our perspective.
     @Test
-    @InSequence(12)
+    @InSequence(13)
     public void testClaim_in_STOCKHOLM() throws Exception {
         LOGGER.log(Level.INFO, "claim in STOCKHOLM, the cargo is arrived, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-16", "00:00"), trackingId, null,
                 SampleLocations.STOCKHOLM.getUnLocode(), HandlingEvent.Type.CLAIM);
-        this.entityManager.flush(); //force to sync to db.
+        commitTransaction();
+
+        //verify in new tx
+        startTransaction();
         Cargo cargo = findCargo();
         // Check current state - should be ok
         assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
@@ -507,9 +573,14 @@ public class CargoLifecycleScenarioTest {
         var cargo = cargoRepository.find(trackingId);
         LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
         LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
-        return this.entityManager.merge(cargo);
-//        return entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+        //this.entityManager.refresh(cargo);
+
+        return cargo;
+//        var cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
 //                .setParameter("trackingId", trackingId).getSingleResult();
+//        LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
+//        LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
+//        return cargo;
     }
 
 

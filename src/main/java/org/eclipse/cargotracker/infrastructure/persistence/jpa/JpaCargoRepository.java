@@ -49,8 +49,10 @@ public class JpaCargoRepository implements CargoRepository, Serializable {
 			entityManager.persist(leg);
 		}
 
-		entityManager.persist(cargo);
+		entityManager.merge(cargo.getRouteSpecification().getOrigin());
+        entityManager.merge(cargo.getRouteSpecification().getDestination());
 
+		entityManager.persist(cargo);
 //        if (cargo.isNew()) {
 //            for (Leg leg : cargo.getItinerary().getLegs()) {
 //                entityManager.persist(leg);

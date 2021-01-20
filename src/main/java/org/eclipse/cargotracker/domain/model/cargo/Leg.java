@@ -58,6 +58,10 @@ public class Leg implements Serializable {
         this.voyage = voyage;
         this.loadLocation = loadLocation;
         this.unloadLocation = unloadLocation;
+
+        //Hibernate issue:
+        // when the `LocalDateTime` field is persisted into db, and retrieved from db, the values are different in nanoseconds.
+        // any good idea to overcome this?
         this.loadTime = loadTime.truncatedTo(ChronoUnit.SECONDS);
         this.unloadTime = unloadTime.truncatedTo(ChronoUnit.SECONDS);
     }
@@ -83,8 +87,8 @@ public class Leg implements Serializable {
     }
 
     private boolean sameValueAs(Leg other) {
-        LOGGER.log(Level.FINE, "this.loadTime == other.loadTime:{0}", this.loadTime.equals(other.loadTime));
-        LOGGER.log(Level.FINE, "this.unloadTime == other.unloadTime:{0}", this.unloadTime.equals(other.unloadTime));
+        LOGGER.log(Level.INFO, "this.loadTime == other.loadTime:{0}", this.loadTime.equals(other.loadTime));
+        LOGGER.log(Level.INFO, "this.unloadTime == other.unloadTime:{0}", this.unloadTime.equals(other.unloadTime));
         return other != null && new EqualsBuilder()
                 .append(this.voyage, other.voyage)
                 .append(this.loadLocation, other.loadLocation)
@@ -124,5 +128,9 @@ public class Leg implements Serializable {
     public String toString() {
         return "Leg{" + "id=" + id + ", voyage=" + voyage + ", loadLocation=" + loadLocation + ", unloadLocation="
                 + unloadLocation + ", loadTime=" + loadTime + ", unloadTime=" + unloadTime + '}';
+    }
+
+    public boolean isNew() {
+        return this.id == null;
     }
 }

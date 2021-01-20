@@ -14,6 +14,7 @@ import org.junit.Test;
 import javax.enterprise.event.Event;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,7 +79,7 @@ public class CargoInspectionServiceTest {
         Cargo cargo = new Cargo(new TrackingId("ABC"),
                 new RouteSpecification(SampleLocations.DALLAS, SampleLocations.HONGKONG, LocalDate.now()));
         cargo.assignToRoute(new Itinerary(
-                List.of(
+                Arrays.asList(
                         new Leg(SampleVoyages.DALLAS_TO_HELSINKI, SampleLocations.DALLAS, SampleLocations.HELSINKI, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9)),
                         new Leg(SampleVoyages.HELSINKI_TO_HONGKONG, SampleLocations.HELSINKI, SampleLocations.HONGKONG, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(9))
                 )
@@ -86,7 +87,7 @@ public class CargoInspectionServiceTest {
         when(cargoRepository.find(any(TrackingId.class))).thenReturn(cargo);
         when(handlingEventRepository.lookupHandlingHistoryOfCargo(any(TrackingId.class)))
                 .thenReturn(new HandlingHistory(
-                        List.of(
+                        Arrays.asList(
                                 new HandlingEvent(cargo, LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(9), HandlingEvent.Type.RECEIVE, SampleLocations.DALLAS),
                                 new HandlingEvent(cargo, LocalDateTime.now().minusDays(9), LocalDateTime.now().minusDays(8), HandlingEvent.Type.LOAD, SampleLocations.DALLAS, SampleVoyages.DALLAS_TO_HELSINKI),
                                 new HandlingEvent(cargo, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(7), HandlingEvent.Type.UNLOAD, SampleLocations.HELSINKI, SampleVoyages.DALLAS_TO_HELSINKI),

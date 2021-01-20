@@ -1,23 +1,20 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
-
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.eclipse.cargotracker.domain.model.location.Location;
 import org.eclipse.cargotracker.domain.shared.AbstractSpecification;
+
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.time.LocalDate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Route specification. Describes where a cargo origin and destination is, and
@@ -26,80 +23,93 @@ import org.eclipse.cargotracker.domain.shared.AbstractSpecification;
 @Embeddable
 public class RouteSpecification extends AbstractSpecification<Itinerary> implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	@ManyToOne
-	@JoinColumn(name = "spec_origin_id", updatable = false)
-	private Location origin;
-	@ManyToOne
-	@JoinColumn(name = "spec_destination_id")
-	private Location destination;
+    private static final long serialVersionUID = 1L;
 
-	//@Temporal(TemporalType.DATE)
-	@Column(name = "spec_arrival_deadline")
-	@NotNull
-	private LocalDate arrivalDeadline;
+    //private static final Logger LOGGER = Logger.getLogger(RouteSpecification.class.getName());
 
-	public RouteSpecification() {
-	}
+    @ManyToOne
+    @JoinColumn(name = "spec_origin_id", updatable = false)
+    private Location origin;
 
-	/**
-	 * @param origin          origin location - can't be the same as the destination
-	 * @param destination     destination location - can't be the same as the origin
-	 * @param arrivalDeadline arrival deadline
-	 */
-	public RouteSpecification(Location origin, Location destination, LocalDate arrivalDeadline) {
-		Validate.notNull(origin, "Origin is required");
-		Validate.notNull(destination, "Destination is required");
-		Validate.notNull(arrivalDeadline, "Arrival deadline is required");
-		Validate.isTrue(!origin.sameIdentityAs(destination), "Origin and destination can't be the same: " + origin);
+    @ManyToOne
+    @JoinColumn(name = "spec_destination_id")
+    private Location destination;
 
-		this.origin = origin;
-		this.destination = destination;
-		this.arrivalDeadline = arrivalDeadline;
-	}
+    //@Temporal(TemporalType.DATE)
+    @Column(name = "spec_arrival_deadline")
+    @NotNull
+    private LocalDate arrivalDeadline;
 
-	public Location getOrigin() {
-		return origin;
-	}
+    public RouteSpecification() {
+    }
 
-	public Location getDestination() {
-		return destination;
-	}
+    /**
+     * @param origin          origin location - can't be the same as the destination
+     * @param destination     destination location - can't be the same as the origin
+     * @param arrivalDeadline arrival deadline
+     */
+    public RouteSpecification(Location origin, Location destination, LocalDate arrivalDeadline) {
+        Validate.notNull(origin, "Origin is required");
+        Validate.notNull(destination, "Destination is required");
+        Validate.notNull(arrivalDeadline, "Arrival deadline is required");
+        Validate.isTrue(!origin.sameIdentityAs(destination), "Origin and destination can't be the same: " + origin);
 
-	public LocalDate getArrivalDeadline() {
-		return arrivalDeadline;
-	}
+        this.origin = origin;
+        this.destination = destination;
+        this.arrivalDeadline = arrivalDeadline;
+    }
 
-	@Override
-	public boolean isSatisfiedBy(Itinerary itinerary) {
-		return itinerary != null && getOrigin().sameIdentityAs(itinerary.getInitialDepartureLocation())
-				&& getDestination().sameIdentityAs(itinerary.getFinalArrivalLocation())
-				&& getArrivalDeadline().isAfter(itinerary.getFinalArrivalDate().toLocalDate());
-	}
+    public Location getOrigin() {
+        return origin;
+    }
 
-	private boolean sameValueAs(RouteSpecification other) {
-		return other != null
-				&& new EqualsBuilder().append(this.origin, other.origin).append(this.destination, other.destination)
-						.append(this.arrivalDeadline, other.arrivalDeadline).isEquals();
-	}
+    public Location getDestination() {
+        return destination;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
+    public LocalDate getArrivalDeadline() {
+        return arrivalDeadline;
+    }
 
-		RouteSpecification that = (RouteSpecification) o;
+    @Override
+    public boolean isSatisfiedBy(Itinerary itinerary) {
+        return itinerary != null && getOrigin().sameIdentityAs(itinerary.getInitialDepartureLocation())
+                && getDestination().sameIdentityAs(itinerary.getFinalArrivalLocation())
+                && getArrivalDeadline().isAfter(itinerary.getFinalArrivalDate().toLocalDate());
+    }
 
-		return sameValueAs(that);
-	}
+    private boolean sameValueAs(RouteSpecification other) {
+        return other != null
+                && new EqualsBuilder().append(this.origin, other.origin).append(this.destination, other.destination)
+                .append(this.arrivalDeadline, other.arrivalDeadline).isEquals();
+    }
 
-	@Override
-	public int hashCode() {
-		return new HashCodeBuilder().append(this.origin).append(this.destination).append(this.arrivalDeadline)
-				.toHashCode();
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RouteSpecification that = (RouteSpecification) o;
+
+        return sameValueAs(that);
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder().append(this.origin).append(this.destination).append(this.arrivalDeadline)
+                .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "RouteSpecification{" +
+                "origin=" + origin +
+                ", destination=" + destination +
+                ", arrivalDeadline=" + arrivalDeadline +
+                '}';
+    }
 }

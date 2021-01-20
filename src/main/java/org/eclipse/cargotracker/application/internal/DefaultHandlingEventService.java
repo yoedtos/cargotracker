@@ -14,6 +14,7 @@ import javax.ejb.Stateless;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // TODO [Jakarta EE 8] Adopt the Date-Time API.
@@ -66,7 +67,7 @@ public class DefaultHandlingEventService implements HandlingEventService {
         /* Publish an event stating that a cargo has been handled. */
         applicationEvents.cargoWasHandled(event);
         
-        LOGGER.info("Registered handling event");
+        LOGGER.log(Level.INFO, "Registered handling event: {0}", event);
     }
     
 }
