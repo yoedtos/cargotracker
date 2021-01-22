@@ -36,12 +36,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -91,13 +94,14 @@ public class CargoLifecycleScenarioTest {
 
         addExtraJars(war);
         addDomainModels(war);
+        addDomainRepositories(war);
         addInfraBase(war);
         addInfraPersistence(war);
         addApplicationBase(war);
 
         addDomainService(war);
         // add fake routing service to isolate the external APIs.
-        war.addClass(CargoLifecycleScenarioTestRoutingServiceStub.class);
+        war.addClass(RoutingServiceStub.class);
 
         // add JMS package
         //addInfraMessaging(war);
@@ -105,7 +109,7 @@ public class CargoLifecycleScenarioTest {
         // Now pickup application service to setup in test.
         war.addClass(ApplicationEvents.class)
                 // use a ApplicationEvents stub bean instead to isolate the jms facilities
-                .addClass(CargoLifecycleScenarioTestSynchronousApplicationEventsStub.class)
+                .addClass(SynchronousApplicationEventsStub.class)
                 .addClass(HandlingEventRegistrationAttempt.class)
 
                 //add other application service
@@ -623,4 +627,87 @@ public class CargoLifecycleScenarioTest {
 //        ((SynchronousApplicationEventsStub) applicationEvents).setCargoInspectionService(cargoInspectionService);
 //    }
 
+    @ApplicationScoped
+    public static class RoutingServiceStub implements RoutingService {
+
+        private static final Logger LOGGER = Logger.getLogger(RoutingServiceStub.class.getName());
+
+        @Inject
+        private LocationRepository locationRepository;
+
+        @Inject
+        private VoyageRepository voyageRepository;
+
+        @Override
+        public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
+            LOGGER.log(Level.INFO, "fetchRoutesForSpecification:: {0}", routeSpecification);
+            if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
+                // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
+                return Arrays.asList(new Itinerary(Arrays.asList(
+                        new Leg(
+                                voyageRepository.find(SampleVoyages.v100.getVoyageNumber()),
+                                locationRepository.find(SampleLocations.HONGKONG.getUnLocode()),
+                                locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
+                                DateUtil.toDateTime("2014-03-03", "00:00"), DateUtil.toDateTime("2014-03-09", "00:00")),
+                        new Leg(
+                                voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
+                                locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
+                                locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
+                                DateUtil.toDateTime("2014-03-10", "00:00"), DateUtil.toDateTime("2014-03-14", "00:00")),
+                        new Leg(
+                                voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
+                                locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
+                                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
+                                DateUtil.toDateTime("2014-03-07", "00:00"), DateUtil.toDateTime("2014-03-11", "00:00"))))
+                );
+            } else {
+                // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
+                // Tokyo
+                return Arrays.asList(new Itinerary(Arrays.asList(
+                        new Leg(
+                                voyageRepository.find(SampleVoyages.v300.getVoyageNumber()),
+                                locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
+                                locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
+                                DateUtil.toDateTime("2014-03-08", "00:00"), DateUtil.toDateTime("2014-03-12", "00:00")),
+                        new Leg(
+                                voyageRepository.find(SampleVoyages.v400.getVoyageNumber()),
+                                locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
+                                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
+                                DateUtil.toDateTime("2014-03-14", "00:00"), DateUtil.toDateTime("2014-03-15", "00:00"))))
+                );
+            }
+        }
+    }
+
+    @ApplicationScoped
+    public static class SynchronousApplicationEventsStub implements ApplicationEvents {
+
+        @Inject
+        Instance<CargoInspectionService> cargoInspectionServiceInstance;
+
+        //no-args constructor required by CDI
+        public SynchronousApplicationEventsStub() {
+        }
+
+        @Override
+        public void cargoWasHandled(HandlingEvent event) {
+            System.out.println("EVENT: cargo was handled: " + event);
+            cargoInspectionServiceInstance.get().inspectCargo(event.getCargo().getTrackingId());
+        }
+
+        @Override
+        public void cargoWasMisdirected(Cargo cargo) {
+            System.out.println("EVENT: cargo was misdirected");
+        }
+
+        @Override
+        public void cargoHasArrived(Cargo cargo) {
+            System.out.println("EVENT: cargo has arrived: " + cargo.getTrackingId().getIdString());
+        }
+
+        @Override
+        public void receivedHandlingEventRegistrationAttempt(HandlingEventRegistrationAttempt attempt) {
+            System.out.println("EVENT: received handling event registration attempt");
+        }
+    }
 }

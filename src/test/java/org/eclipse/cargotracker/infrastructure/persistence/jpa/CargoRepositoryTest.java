@@ -52,6 +52,7 @@ public class CargoRepositoryTest {
 
         addExtraJars(war);
         addDomainModels(war);
+        addDomainRepositories(war);
         addInfraBase(war);
         addInfraPersistence(war);
         addApplicationBase(war);

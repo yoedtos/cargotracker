@@ -451,6 +451,7 @@
             <id>arq-payara-managed</id>
             <properties>
                 <skipTests>false</skipTests>
+                <payara.home>${project.build.directory}/payara5</payara.home>
             </properties>
             <dependencies>
 
@@ -619,8 +620,6 @@
             <id>arq-wildfly-managed</id>
             <properties>
                 <skipTests>false</skipTests>
-                <serverProfile>standalone-full.xml</serverProfile>
-                <serverRoot>${project.build.directory}/wildfly-${wildfly.version}</serverRoot>
             </properties>
             <dependencies>
                 <!--<dependency>
@@ -690,7 +689,7 @@
                                 <JBOSS_HOME>${project.build.directory}/wildfly-${wildfly.version}</JBOSS_HOME>
                             </environmentVariables>
                             <systemPropertyVariables>
-                                <server-config>standalone.xml</server-config>
+                                <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             </systemPropertyVariables>
                         </configuration>
@@ -805,7 +804,8 @@
                                 <JBOSS_HOME>${project.build.directory}/wildfly-${wildfly.version}</JBOSS_HOME>
                             </environmentVariables>
                             <systemPropertyVariables>
-                                <server-config>standalone.xml</server-config>
+                                <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>
+                                <serverConfig>standalone-full.xml</serverConfig>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             </systemPropertyVariables>
                         </configuration>

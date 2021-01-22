@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker;
 
+import org.eclipse.cargotracker.application.BookingService;
+import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.application.util.LocationUtil;
 import org.eclipse.cargotracker.domain.model.cargo.*;
@@ -19,6 +21,10 @@ import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaHandlingEventR
 import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaLocationRepository;
 import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaVoyageRepository;
 import org.eclipse.cargotracker.infrastructure.routing.ExternalRoutingService;
+import org.eclipse.pathfinder.api.GraphTraversalService;
+import org.eclipse.pathfinder.api.TransitEdge;
+import org.eclipse.pathfinder.api.TransitPath;
+import org.eclipse.pathfinder.internal.GraphDao;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
@@ -49,7 +55,7 @@ public class Deployments {
             Class<?> clazz = Class.forName("org.eclipse.cargotracker.infrastructure.routing.client.JacksonDatatypeJacksonProducer");
             war.addClass(clazz);
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.WARNING, "missing class: {0}", e.getMessage());
+            LOGGER.log(Level.WARNING, "ignore this exception on non-WildFly server: {0}", e.getMessage());
         }
 
     }
@@ -66,6 +72,11 @@ public class Deployments {
 
     public static void addApplicationBase(WebArchive war) {
         war.addClass(DateUtil.class).addClass(LocationUtil.class);
+    }
+
+    public static void addApplicationService(WebArchive war) {
+        war.addPackage(BookingService.class.getPackage())
+                .addPackage(DefaultBookingService.class.getPackage());
     }
 
     public static void addInfraMessaging(WebArchive war) {
@@ -101,7 +112,7 @@ public class Deployments {
 
                 // handling models
                 .addClass(HandlingEvent.class)
-                .addClass(HandlingEventFactory.class)
+               //.addClass(HandlingEventFactory.class)
                 .addClass(HandlingHistory.class)
                 .addClass(CannotCreateHandlingEventException.class)
                 .addClass(UnknownCargoException.class)
@@ -114,10 +125,13 @@ public class Deployments {
                 .addClass(AndSpecification.class)
                 .addClass(OrSpecification.class)
                 .addClass(NotSpecification.class)
-                .addClass(DomainObjectUtils.class)
+                .addClass(DomainObjectUtils.class);
+    }
 
-                // add repos
-                .addClass(CargoRepository.class)
+    public static void addDomainRepositories(WebArchive war) {
+        war.addClass(HandlingEventFactory.class); //depends on repos
+        // add repos
+        war.addClass(CargoRepository.class)
                 .addClass(LocationRepository.class)
                 .addClass(VoyageRepository.class)
                 .addClass(HandlingEventRepository.class);
@@ -125,5 +139,13 @@ public class Deployments {
 
     public static void addDomainService(WebArchive war) {
         war.addClass(RoutingService.class);
+    }
+
+    public static void addGraphTraversalModels(WebArchive war) {
+        war.addClass(TransitPath.class).addClass(TransitEdge.class);
+    }
+
+    public static void addGraphTraversalService(WebArchive war) {
+        war.addClass(GraphTraversalService.class).addClass(GraphDao.class);
     }
 }

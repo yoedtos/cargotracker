@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+// WildFly issue:
+// EJB can not be an inner class.
 @Singleton
 @Startup
 public class CargoLifecycleScenarioTestDataGenerator {

@@ -20,7 +20,6 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.junit.InSequence;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,9 +29,9 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
 import javax.transaction.UserTransaction;
-import java.io.File;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
@@ -78,6 +77,7 @@ public class BookingServiceTest {
 
         addExtraJars(war);
         addDomainModels(war);
+        addDomainRepositories(war);
         addInfraBase(war);
         addInfraPersistence(war);
         addApplicationBase(war);
@@ -97,7 +97,7 @@ public class BookingServiceTest {
                 // Sample data.
                 .addClass(BookingServiceTestDataGenerator.class).addClass(SampleLocations.class)
                 .addClass(SampleVoyages.class)
-                .addClass(BookingServiceTestRestConfiguration.class)
+                .addClass(TestRestConfiguration.class)
 
                 // add persistence unit descriptor
                 .addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml")
@@ -241,5 +241,20 @@ public class BookingServiceTest {
         assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
         assertFalse(cargo.getDelivery().isUnloadedAtDestination());
         assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
+    }
+
+    /**
+     * JAX-RS configuration.
+     */
+    @ApplicationPath("rest")
+    public static class TestRestConfiguration extends Application {
+
+    //    public BookingServiceTestRestConfiguration() {
+    //        // Resources
+    //        packages(new String[]{GraphTraversalService.class.getPackage().getName()});
+    //        // Providers - JSON.
+    //        register(new MoxyJsonFeature());
+    //        register(new JsonMoxyConfigurationContextResolver()); // TODO [Jakarta EE 8] See if this can be removed.
+    //    }
     }
 }

@@ -40,6 +40,7 @@ public class CarrierMovementRepositoryTest {
 
         addExtraJars(war);
         addDomainModels(war);
+        addDomainRepositories(war);
         addInfraBase(war);
         addInfraPersistence(war);
         addApplicationBase(war);
