@@ -43,7 +43,8 @@ public class CargoMonitoringService {
 				.add("misdirected", cargo.getDelivery().isMisdirected())
 				.add("transportStatus", cargo.getDelivery().getTransportStatus().toString())
 				.add("atDestination", cargo.getDelivery().isUnloadedAtDestination())
-				.add("origin", cargo.getOrigin().getUnLocode().getIdString()).add("lastKnownLocation",
+				.add("origin", cargo.getOrigin().getUnLocode().getIdString())
+				.add("lastKnownLocation",
 						cargo.getDelivery().getLastKnownLocation().getUnLocode().getIdString().equals("XXXXX")
 								? "Unknown"
 								: cargo.getDelivery().getLastKnownLocation().getUnLocode().getIdString());

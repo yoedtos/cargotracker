@@ -1,6 +1,7 @@
 package org.eclipse.cargotracker.domain.model.location;
 
 import org.apache.commons.lang3.Validate;
+import org.eclipse.cargotracker.application.util.LocationUtil;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -94,6 +95,6 @@ public class Location implements Serializable {
 
     @Override
     public String toString() {
-        return name + " [" + unLocode + "]";
+        return LocationUtil.asString(this);
     }
 }
