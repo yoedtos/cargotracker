@@ -633,7 +633,7 @@
                 <!-- JAXRS test need the dependency:resteasy-client -->
                 <!-- Import the RestEasy Client and jackson2/json-binding/json-p provider, we use test scope
                     as we need that for test purposes -->
-                <!--<dependency>
+                <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
                     <version>${resteasy.version}</version>
@@ -644,7 +644,7 @@
                     <artifactId>resteasy-jackson2-provider</artifactId>
                     <version>${resteasy.version}</version>
                     <scope>test</scope>
-                </dependency>-->
+                </dependency>
                 <dependency>
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
@@ -706,7 +706,7 @@
                 <skipTests>false</skipTests>
             </properties>
             <dependencies>
-                <!--<dependency>
+                <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
                     <version>${resteasy.version}</version>
@@ -717,7 +717,7 @@
                     <artifactId>resteasy-jackson2-provider</artifactId>
                     <version>${resteasy.version}</version>
                     <scope>test</scope>
-                </dependency>-->
+                </dependency>
                 <dependency>
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-remote</artifactId>
