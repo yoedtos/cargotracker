@@ -36,7 +36,7 @@ public class CargoMonitoringServiceTest {
 
     @Deployment(testable = false)
     public static WebArchive createDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-CargoRepositoryTest.war");
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-CargoMonitoringServiceTest.war");
 
         addExtraJars(war);
         addDomainModels(war);

@@ -49,18 +49,7 @@ public class JpaCargoRepository implements CargoRepository, Serializable {
 			entityManager.persist(leg);
 		}
 
-		entityManager.merge(cargo.getRouteSpecification().getOrigin());
-        entityManager.merge(cargo.getRouteSpecification().getDestination());
-
 		entityManager.persist(cargo);
-//        if (cargo.isNew()) {
-//            for (Leg leg : cargo.getItinerary().getLegs()) {
-//                entityManager.persist(leg);
-//            }
-//            entityManager.persist(cargo);
-//        } else {
-//            entityManager.merge(cargo);
-//        }
 
         // Hibernate issue:
         // Delete-orphan does not seem to work correctly when the parent is a component
