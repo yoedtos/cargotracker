@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<con:soapui-project activeEnvironment="Default" name="CargoTracker" resourceRoot="" soapui-version="4.5.2"
-                    abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config">
+<con:soapui-project xmlns:con="http://eviware.com/soapui/config" activeEnvironment="Default" name="CargoTracker"
+                    resourceRoot=""
+                    soapui-version="4.5.2" abortOnError="false" runType="SEQUENTIAL">
     <con:settings/>
-    <con:interface xsi:type="con:RestService" wadlVersion="http://wadl.dev.java.net/2009/02" name="CargoTracker"
-                   type="rest" basePath="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <con:interface xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="con:RestService"
+                   wadlVersion="http://wadl.dev.java.net/2009/02"
+                   name="CargoTracker" type="rest" basePath="">
         <con:settings/>
         <con:definitionCache type="TEXT" rootPart=""/>
         <con:endpoints>

@@ -1,6 +1,5 @@
 package org.eclipse.cargotracker.application;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.util.DateUtil;
@@ -41,191 +40,235 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.File;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
 /**
- * Application layer integration test covering a number of otherwise fairly
- * trivial components that largely do not warrant their own tests.
- * <p>
- * Ensure a Payara instance is running locally before this test is executed,
- * with the default user name and password.
+ * Application layer integration test covering a number of otherwise fairly trivial components that
+ * largely do not warrant their own tests.
+ *
+ * <p>Ensure a Payara instance is running locally before this test is executed, with the default
+ * user name and password.
  */
-//TODO [Jakarta EE 8] Move to the Java Date-Time API for date manipulation. Also avoid hard-coded dates.
+// TODO [Jakarta EE 8] Move to the Java Date-Time API for date manipulation. Also avoid hard-coded
+// dates.
 @RunWith(Arquillian.class)
 @Category(IntegrationTests.class)
 public class BookingServiceTest {
-    private static final Logger LOGGER = Logger.getLogger(BookingServiceTest.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(BookingServiceTest.class.getName());
+  private static TrackingId trackingId;
+  private static List<Itinerary> candidates;
+  private static LocalDate deadline;
+  private static Itinerary assigned;
+  @Inject private BookingService bookingService;
+  @PersistenceContext private EntityManager entityManager;
 
-    @Inject
-    private BookingService bookingService;
-    @PersistenceContext
-    private EntityManager entityManager;
+  @Deployment
+  public static WebArchive createDeployment() {
+    File[] extraJars =
+        Maven.resolver()
+            .loadPomFromFile("pom.xml")
+            .resolve(List.of("org.apache.commons:commons-lang3", "org.postgresql:postgresql"))
+            .withTransitivity()
+            .asFile();
 
-    private static TrackingId trackingId;
-    private static List<Itinerary> candidates;
-    private static LocalDate deadline;
-    private static Itinerary assigned;
+    LOGGER.log(Level.INFO, "Adding extra jars: {0}", new Object[] {extraJars});
 
-    @Deployment
-    public static WebArchive createDeployment() {
-        File[] extraJars = Maven.resolver().loadPomFromFile("pom.xml")
-                .resolve(List.of("org.apache.commons:commons-lang3", "org.postgresql:postgresql"))
-                .withTransitivity()
-                .asFile();
+    WebArchive war =
+        ShrinkWrap.create(WebArchive.class, "cargo-tracker-test.war")
+            // Application layer component directly under test.
+            .addClass(BookingService.class)
+            // Domain layer components.
+            .addClass(TrackingId.class)
+            .addClass(UnLocode.class)
+            .addClass(Itinerary.class)
+            .addClass(Leg.class)
+            .addClass(Voyage.class)
+            .addClass(VoyageNumber.class)
+            .addClass(Schedule.class)
+            .addClass(CarrierMovement.class)
+            .addClass(Location.class)
+            .addClass(HandlingEvent.class)
+            .addClass(Cargo.class)
+            .addClass(RouteSpecification.class)
+            .addClass(AbstractSpecification.class)
+            .addClass(Specification.class)
+            .addClass(AndSpecification.class)
+            .addClass(OrSpecification.class)
+            .addClass(NotSpecification.class)
+            .addClass(Delivery.class)
+            .addClass(TransportStatus.class)
+            .addClass(HandlingActivity.class)
+            .addClass(RoutingStatus.class)
+            .addClass(HandlingHistory.class)
+            .addClass(DomainObjectUtils.class)
+            .addClass(CargoRepository.class)
+            .addClass(LocationRepository.class)
+            .addClass(VoyageRepository.class)
+            .addClass(HandlingEventRepository.class)
+            .addClass(HandlingEventFactory.class)
+            .addClass(CannotCreateHandlingEventException.class)
+            .addClass(UnknownCargoException.class)
+            .addClass(UnknownVoyageException.class)
+            .addClass(UnknownLocationException.class)
+            .addClass(RoutingService.class)
+            // Application layer components
+            .addClass(DefaultBookingService.class)
+            // Infrastructure layer components.
+            .addClass(DatabaseSetup.class)
+            .addClass(JMSResourcesSetup.class)
+            .addClass(JpaCargoRepository.class)
+            .addClass(JpaVoyageRepository.class)
+            .addClass(JpaHandlingEventRepository.class)
+            .addClass(JpaLocationRepository.class)
+            .addClass(ExternalRoutingService.class)
+            .addClass(LoggerProducer.class)
+            // .addClass(JsonMoxyConfigurationContextResolver.class)
+            // Interface components
+            .addClass(TransitPath.class)
+            .addClass(TransitEdge.class)
+            // Third-party system simulator
+            .addClass(GraphTraversalService.class)
+            .addClass(GraphDao.class)
+            // Sample data.
+            .addClass(BookingServiceTestDataGenerator.class)
+            .addClass(SampleLocations.class)
+            .addClass(SampleVoyages.class)
+            .addClass(DateUtil.class)
+            .addClass(BookingServiceTestRestConfiguration.class)
 
-        LOGGER.log(Level.INFO, "Adding extra jars: {0}", new Object[]{extraJars});
+            // add persistence unit descriptor
+            .addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml")
 
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "cargo-tracker-test.war")
-                // Application layer component directly under test.
-                .addClass(BookingService.class)
-                // Domain layer components.
-                .addClass(TrackingId.class).addClass(UnLocode.class).addClass(Itinerary.class).addClass(Leg.class)
-                .addClass(Voyage.class).addClass(VoyageNumber.class).addClass(Schedule.class)
-                .addClass(CarrierMovement.class).addClass(Location.class).addClass(HandlingEvent.class)
-                .addClass(Cargo.class).addClass(RouteSpecification.class).addClass(AbstractSpecification.class)
-                .addClass(Specification.class).addClass(AndSpecification.class).addClass(OrSpecification.class)
-                .addClass(NotSpecification.class).addClass(Delivery.class).addClass(TransportStatus.class)
-                .addClass(HandlingActivity.class).addClass(RoutingStatus.class).addClass(HandlingHistory.class)
-                .addClass(DomainObjectUtils.class).addClass(CargoRepository.class).addClass(LocationRepository.class)
-                .addClass(VoyageRepository.class).addClass(HandlingEventRepository.class)
-                .addClass(HandlingEventFactory.class).addClass(CannotCreateHandlingEventException.class)
-                .addClass(UnknownCargoException.class).addClass(UnknownVoyageException.class)
-                .addClass(UnknownLocationException.class).addClass(RoutingService.class)
-                // Application layer components
-                .addClass(DefaultBookingService.class)
-                // Infrastructure layer components.
-                .addClass(DatabaseSetup.class).addClass(JMSResourcesSetup.class)
-                .addClass(JpaCargoRepository.class).addClass(JpaVoyageRepository.class)
-                .addClass(JpaHandlingEventRepository.class).addClass(JpaLocationRepository.class)
-                .addClass(ExternalRoutingService.class).addClass(LoggerProducer.class)
-                //.addClass(JsonMoxyConfigurationContextResolver.class)
-                // Interface components
-                .addClass(TransitPath.class).addClass(TransitEdge.class)
-                // Third-party system simulator
-                .addClass(GraphTraversalService.class).addClass(GraphDao.class)
-                // Sample data.
-                .addClass(BookingServiceTestDataGenerator.class).addClass(SampleLocations.class)
-                .addClass(SampleVoyages.class).addClass(DateUtil.class)
-                .addClass(BookingServiceTestRestConfiguration.class)
+            // add web xml
+            .addAsWebInfResource("test-web.xml", "web.xml")
 
-                // add persistence unit descriptor
-                .addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml")
+            // add extra jars.
+            .addAsLibraries(extraJars);
 
-                // add web xml
-                .addAsWebInfResource("test-web.xml", "web.xml")
+    LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
 
-                // add extra jars.
-                .addAsLibraries(extraJars);
+    return war;
+  }
 
-        LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
+  @Test
+  @InSequence(1)
+  public void testRegisterNew() {
+    UnLocode fromUnlocode = new UnLocode("USCHI");
+    UnLocode toUnlocode = new UnLocode("SESTO");
 
-        return war;
-    }
+    deadline = LocalDate.now().plusMonths(6);
 
-    @Test
-    @InSequence(1)
-    public void testRegisterNew() {
-        UnLocode fromUnlocode = new UnLocode("USCHI");
-        UnLocode toUnlocode = new UnLocode("SESTO");
+    trackingId = bookingService.bookNewCargo(fromUnlocode, toUnlocode, deadline);
 
-        deadline = LocalDate.now().plusMonths(6);
+    Cargo cargo =
+        entityManager
+            .createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+            .setParameter("trackingId", trackingId)
+            .getSingleResult();
 
-        trackingId = bookingService.bookNewCargo(fromUnlocode, toUnlocode, deadline);
+    assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
+    assertEquals(SampleLocations.STOCKHOLM, cargo.getRouteSpecification().getDestination());
+    assertTrue(deadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
+    assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
+    assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
+    assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
+    assertFalse(cargo.getDelivery().isMisdirected());
+    assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
+    assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
+    assertFalse(cargo.getDelivery().isUnloadedAtDestination());
+    assertEquals(RoutingStatus.NOT_ROUTED, cargo.getDelivery().getRoutingStatus());
+    assertEquals(Itinerary.EMPTY_ITINERARY, cargo.getItinerary());
+  }
 
-        Cargo cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
-                .setParameter("trackingId", trackingId).getSingleResult();
+  @Test
+  @InSequence(2)
+  public void testRouteCandidates() {
+    candidates = bookingService.requestPossibleRoutesForCargo(trackingId);
 
-        assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
-        assertEquals(SampleLocations.STOCKHOLM, cargo.getRouteSpecification().getDestination());
-        assertTrue(deadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
-        assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
-        assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
-        assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
-        assertFalse(cargo.getDelivery().isMisdirected());
-        assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
-        assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
-        assertFalse(cargo.getDelivery().isUnloadedAtDestination());
-        assertEquals(RoutingStatus.NOT_ROUTED, cargo.getDelivery().getRoutingStatus());
-        assertEquals(Itinerary.EMPTY_ITINERARY, cargo.getItinerary());
-    }
+    assertFalse(candidates.isEmpty());
+  }
 
-    @Test
-    @InSequence(2)
-    public void testRouteCandidates() {
-        candidates = bookingService.requestPossibleRoutesForCargo(trackingId);
+  @Test
+  @InSequence(3)
+  public void testAssignRoute() {
+    assigned = candidates.get(new Random().nextInt(candidates.size()));
 
-        assertFalse(candidates.isEmpty());
-    }
+    bookingService.assignCargoToRoute(assigned, trackingId);
 
-    @Test
-    @InSequence(3)
-    public void testAssignRoute() {
-        assigned = candidates.get(new Random().nextInt(candidates.size()));
+    Cargo cargo =
+        entityManager
+            .createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+            .setParameter("trackingId", trackingId)
+            .getSingleResult();
 
-        bookingService.assignCargoToRoute(assigned, trackingId);
+    assertEquals(assigned, cargo.getItinerary());
+    assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
+    assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
+    assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
+    assertFalse(cargo.getDelivery().isMisdirected());
+    assertTrue(cargo.getDelivery().getEstimatedTimeOfArrival().isBefore(deadline.atStartOfDay()));
+    Assert.assertEquals(
+        HandlingEvent.Type.RECEIVE, cargo.getDelivery().getNextExpectedActivity().getType());
+    Assert.assertEquals(
+        SampleLocations.CHICAGO, cargo.getDelivery().getNextExpectedActivity().getLocation());
+    Assert.assertEquals(null, cargo.getDelivery().getNextExpectedActivity().getVoyage());
+    assertFalse(cargo.getDelivery().isUnloadedAtDestination());
+    assertEquals(RoutingStatus.ROUTED, cargo.getDelivery().getRoutingStatus());
+  }
 
-        Cargo cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
-                .setParameter("trackingId", trackingId).getSingleResult();
+  @Test
+  @InSequence(4)
+  public void testChangeDestination() {
+    bookingService.changeDestination(trackingId, new UnLocode("FIHEL"));
 
-        assertEquals(assigned, cargo.getItinerary());
-        assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
-        assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
-        assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
-        assertFalse(cargo.getDelivery().isMisdirected());
-        assertTrue(cargo.getDelivery().getEstimatedTimeOfArrival().isBefore(deadline.atStartOfDay()));
-        Assert.assertEquals(HandlingEvent.Type.RECEIVE, cargo.getDelivery().getNextExpectedActivity().getType());
-        Assert.assertEquals(SampleLocations.CHICAGO, cargo.getDelivery().getNextExpectedActivity().getLocation());
-        Assert.assertEquals(null, cargo.getDelivery().getNextExpectedActivity().getVoyage());
-        assertFalse(cargo.getDelivery().isUnloadedAtDestination());
-        assertEquals(RoutingStatus.ROUTED, cargo.getDelivery().getRoutingStatus());
-    }
+    Cargo cargo =
+        entityManager
+            .createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+            .setParameter("trackingId", trackingId)
+            .getSingleResult();
 
-    @Test
-    @InSequence(4)
-    public void testChangeDestination() {
-        bookingService.changeDestination(trackingId, new UnLocode("FIHEL"));
+    assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
+    assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
+    assertTrue(deadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
+    assertEquals(assigned, cargo.getItinerary());
+    assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
+    assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
+    assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
+    assertFalse(cargo.getDelivery().isMisdirected());
+    assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
+    assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
+    assertFalse(cargo.getDelivery().isUnloadedAtDestination());
+    assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
+  }
 
-        Cargo cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
-                .setParameter("trackingId", trackingId).getSingleResult();
+  @Test
+  @InSequence(5)
+  public void testChangeDeadline() {
+    LocalDate newDeadline = deadline.plusMonths(1);
+    bookingService.changeDeadline(trackingId, newDeadline);
 
-        assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
-        assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
-        assertTrue(deadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
-        assertEquals(assigned, cargo.getItinerary());
-        assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
-        assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
-        assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
-        assertFalse(cargo.getDelivery().isMisdirected());
-        assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
-        assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
-        assertFalse(cargo.getDelivery().isUnloadedAtDestination());
-        assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
-    }
+    Cargo cargo =
+        entityManager
+            .createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+            .setParameter("trackingId", trackingId)
+            .getSingleResult();
 
-    @Test
-    @InSequence(5)
-    public void testChangeDeadline() {
-        LocalDate newDeadline = deadline.plusMonths(1);
-        bookingService.changeDeadline(trackingId, newDeadline);
-
-        Cargo cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
-                .setParameter("trackingId", trackingId).getSingleResult();
-
-        assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
-        assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
-        assertTrue(newDeadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
-        assertEquals(assigned, cargo.getItinerary());
-        assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
-        assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
-        assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
-        assertFalse(cargo.getDelivery().isMisdirected());
-        assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
-        assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
-        assertFalse(cargo.getDelivery().isUnloadedAtDestination());
-        assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
-    }
+    assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
+    assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
+    assertTrue(newDeadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
+    assertEquals(assigned, cargo.getItinerary());
+    assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
+    assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
+    assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
+    assertFalse(cargo.getDelivery().isMisdirected());
+    assertEquals(Delivery.ETA_UNKOWN, cargo.getDelivery().getEstimatedTimeOfArrival());
+    assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
+    assertFalse(cargo.getDelivery().isUnloadedAtDestination());
+    assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
+  }
 }

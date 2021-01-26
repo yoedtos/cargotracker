@@ -27,71 +27,73 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Our end of the routing service. This is basically a data model translation
- * layer between our domain model and the API put forward by the routing team,
- * which operates in a different context from us.
+ * Our end of the routing service. This is basically a data model translation layer between our
+ * domain model and the API put forward by the routing team, which operates in a different context
+ * from us.
  */
 @Stateless
 public class ExternalRoutingService implements RoutingService {
 
-    @Inject
-    private Logger logger;
+  private final Client jaxrsClient = ClientBuilder.newClient();
+  @Inject private Logger logger;
+  @Resource(lookup = "java:app/configuration/GraphTraversalUrl")
+  private String graphTraversalUrl;
+  private WebTarget graphTraversalResource;
 
-    @Resource(lookup = "java:app/configuration/GraphTraversalUrl")
-    private String graphTraversalUrl;
+  @Inject private LocationRepository locationRepository;
+  @Inject private VoyageRepository voyageRepository;
 
-    private final Client jaxrsClient = ClientBuilder.newClient();
-    private WebTarget graphTraversalResource;
+  @PostConstruct
+  public void init() {
+    graphTraversalResource = jaxrsClient.target(graphTraversalUrl);
+    // graphTraversalResource.register(new MoxyJsonFeature()).register(new
+    // JsonMoxyConfigurationContextResolver());
+  }
 
-    @Inject
-    private LocationRepository locationRepository;
-    @Inject
-    private VoyageRepository voyageRepository;
+  @Override
+  public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
+    // The RouteSpecification is picked apart and adapted to the external API.
+    String origin = routeSpecification.getOrigin().getUnLocode().getIdString();
+    String destination = routeSpecification.getDestination().getUnLocode().getIdString();
 
-    @PostConstruct
-    public void init() {
-        graphTraversalResource = jaxrsClient.target(graphTraversalUrl);
-        //graphTraversalResource.register(new MoxyJsonFeature()).register(new JsonMoxyConfigurationContextResolver());
-    }
+    List<TransitPath> transitPaths =
+        graphTraversalResource
+            .queryParam("origin", origin)
+            .queryParam("destination", destination)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get(new GenericType<>() {});
 
-    @Override
-    public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
-        // The RouteSpecification is picked apart and adapted to the external API.
-        String origin = routeSpecification.getOrigin().getUnLocode().getIdString();
-        String destination = routeSpecification.getDestination().getUnLocode().getIdString();
+    // The returned result is then translated back into our domain model.
+    List<Itinerary> itineraries = new ArrayList<>();
 
-        List<TransitPath> transitPaths = graphTraversalResource.queryParam("origin", origin)
-                .queryParam("destination", destination)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(new GenericType<>() { });
+    // Use the specification to safe-guard against invalid itineraries
+    transitPaths.stream()
+        .map(this::toItinerary)
+        .forEach(
+            itinerary -> {
+              if (routeSpecification.isSatisfiedBy(itinerary)) {
+                itineraries.add(itinerary);
+              } else {
+                logger.log(
+                    Level.FINE, "Received itinerary that did not satisfy the route specification");
+              }
+            });
 
-        // The returned result is then translated back into our domain model.
-        List<Itinerary> itineraries = new ArrayList<>();
+    return itineraries;
+  }
 
-        // Use the specification to safe-guard against invalid itineraries
-        transitPaths.stream()
-                .map(this::toItinerary)
-                .forEach(itinerary -> {
-                    if (routeSpecification.isSatisfiedBy(itinerary)) {
-                        itineraries.add(itinerary);
-                    } else {
-                        logger.log(Level.FINE, "Received itinerary that did not satisfy the route specification");
-                    }
-                });
+  private Itinerary toItinerary(TransitPath transitPath) {
+    List<Leg> legs =
+        transitPath.getTransitEdges().stream().map(this::toLeg).collect(Collectors.toList());
+    return new Itinerary(legs);
+  }
 
-        return itineraries;
-    }
-
-    private Itinerary toItinerary(TransitPath transitPath) {
-        List<Leg> legs = transitPath.getTransitEdges().stream()
-                .map(this::toLeg)
-                .collect(Collectors.toList());
-        return new Itinerary(legs);
-    }
-
-    private Leg toLeg(TransitEdge edge) {
-        return new Leg(voyageRepository.find(new VoyageNumber(edge.getVoyageNumber())),
-                locationRepository.find(new UnLocode(edge.getFromUnLocode())),
-                locationRepository.find(new UnLocode(edge.getToUnLocode())), edge.getFromDate(), edge.getToDate());
-    }
+  private Leg toLeg(TransitEdge edge) {
+    return new Leg(
+        voyageRepository.find(new VoyageNumber(edge.getVoyageNumber())),
+        locationRepository.find(new UnLocode(edge.getFromUnLocode())),
+        locationRepository.find(new UnLocode(edge.getToUnLocode())),
+        edge.getFromDate(),
+        edge.getToDate());
+  }
 }
