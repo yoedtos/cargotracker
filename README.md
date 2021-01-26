@@ -1,12 +1,10 @@
 # Eclipse Cargo Tracker - Applied Domain-Driven Design Blueprints for Jakarta EE
 
-![compile and build](https://github.com/hantsy/cargo-tracker/workflows/build/badge.svg)
-![Integration Test with Arquillian Payara Managed Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-payara-managed/badge.svg)
-![Integration Test with Arquillian Payara Micro Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-payara-micro/badge.svg)
-
-![Integration Test with Arquillian WildFly Managed Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-wildfly-managed/badge.svg)
-
-![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargo-tracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
+![compile and build](https://github.com/hantsy/cargotracker/workflows/build/badge.svg)
+![Integration Test with Arquillian Payara Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-managed/badge.svg)
+![Integration Test with Arquillian Payara Micro Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-micro/badge.svg)
+![Integration Test with Arquillian WildFly Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-managed/badge.svg)
+![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
 
 ## Overview
 

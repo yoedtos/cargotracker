@@ -1,5 +1,17 @@
 package org.eclipse.cargotracker.infrastructure.persistence.jpa;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.cargotracker.Deployments.addApplicationBase;
+import static org.eclipse.cargotracker.Deployments.addDomainModels;
+import static org.eclipse.cargotracker.Deployments.addDomainRepositories;
+import static org.eclipse.cargotracker.Deployments.addExtraJars;
+import static org.eclipse.cargotracker.Deployments.addInfraBase;
+import static org.eclipse.cargotracker.Deployments.addInfraPersistence;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.inject.Inject;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.util.RestConfiguration;
 import org.eclipse.cargotracker.application.util.SampleDataGenerator;
@@ -17,72 +29,61 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.cargotracker.Deployments.*;
-
 @RunWith(Arquillian.class)
 @Category(IntegrationTests.class)
 public class LocationRepositoryTest {
-    private static final Logger LOGGER = Logger.getLogger(LocationRepositoryTest.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(LocationRepositoryTest.class.getName());
+  @Inject private LocationRepository locationRepository;
 
-    @Deployment
-    public static WebArchive createDeployment() {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-LocationRepositoryTest.war");
+  @Deployment
+  public static WebArchive createDeployment() {
+    WebArchive war = ShrinkWrap.create(WebArchive.class, "test-LocationRepositoryTest.war");
 
-        addExtraJars(war);
-        addDomainModels(war);
-        addDomainRepositories(war);
-        addInfraBase(war);
-        addInfraPersistence(war);
-        addApplicationBase(war);
+    addExtraJars(war);
+    addDomainModels(war);
+    addDomainRepositories(war);
+    addInfraBase(war);
+    addInfraPersistence(war);
+    addApplicationBase(war);
 
-        war.addClass(RestConfiguration.class);
-        war.addClass(SampleDataGenerator.class)
-                .addClass(SampleLocations.class)
-                .addClass(SampleVoyages.class)
-                // add persistence unit descriptor
-                .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
+    war.addClass(RestConfiguration.class);
+    war.addClass(SampleDataGenerator.class)
+        .addClass(SampleLocations.class)
+        .addClass(SampleVoyages.class)
+        // add persistence unit descriptor
+        .addAsResource("test-persistence.xml", "META-INF/persistence.xml")
 
-                // add web xml
-                .addAsWebInfResource("test-web.xml", "web.xml")
+        // add web xml
+        .addAsWebInfResource("test-web.xml", "web.xml")
 
-                // add Wildfly specific deployment descriptor
-                .addAsWebInfResource("test-jboss-deployment-structure.xml", "jboss-deployment-structure.xml");
+        // add Wildfly specific deployment descriptor
+        .addAsWebInfResource(
+            "test-jboss-deployment-structure.xml", "jboss-deployment-structure.xml");
 
-        LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
+    LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
 
-        return war;
-    }
+    return war;
+  }
 
-    @Inject
-    private LocationRepository locationRepository;
+  @Before
+  public void setup() {}
 
-    @Before
-    public void setup() {
-    }
+  @Test
+  public void testFind() {
+    final UnLocode melbourne = new UnLocode("AUMEL");
+    Location location = locationRepository.find(melbourne);
+    assertThat(location).isNotNull();
+    assertThat(location.getName()).isEqualTo("Melbourne");
+    assertThat(location.getUnLocode()).isEqualTo(melbourne);
 
-    @Test
-    public void testFind() {
-        final UnLocode melbourne = new UnLocode("AUMEL");
-        Location location = locationRepository.find(melbourne);
-        assertThat(location).isNotNull();
-        assertThat(location.getName()).isEqualTo("Melbourne");
-        assertThat(location.getUnLocode()).isEqualTo(melbourne);
+    assertThat(locationRepository.find(new UnLocode("NOLOC"))).isNull();
+  }
 
-        assertThat(locationRepository.find(new UnLocode("NOLOC"))).isNull();
-    }
+  @Test
+  public void testFindAll() {
+    List<Location> allLocations = locationRepository.findAll();
 
-    @Test
-    public void testFindAll() {
-        List<Location> allLocations = locationRepository.findAll();
-
-        assertThat(allLocations).isNotNull();
-        assertThat(allLocations).hasSize(13);
-    }
-
+    assertThat(allLocations).isNotNull();
+    assertThat(allLocations).hasSize(13);
+  }
 }

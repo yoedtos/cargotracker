@@ -1,5 +1,15 @@
 package org.eclipse.cargotracker.application;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
 import org.eclipse.cargotracker.domain.model.cargo.Cargo;
 import org.eclipse.cargotracker.domain.model.cargo.RouteSpecification;
@@ -14,46 +24,66 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 public class HandlingEventServiceTest {
-    
-    private DefaultHandlingEventService service;
-    private final ApplicationEvents applicationEvents = mock(ApplicationEvents.class);
-    private final HandlingEventRepository handlingEventRepository = mock(HandlingEventRepository.class);
-    private final HandlingEventFactory handlingEventFactory = mock(HandlingEventFactory.class);
-    
-    private final Cargo cargo = new Cargo(new TrackingId("ABC"),
-            new RouteSpecification(SampleLocations.HAMBURG, SampleLocations.TOKYO, LocalDate.now()));
-    
-    @Before
-    public void setUp() {
-        service = new DefaultHandlingEventService(applicationEvents, handlingEventRepository, handlingEventFactory);
-    }
-    
-    @Test
-    public void testRegisterEvent() throws Exception {
-        //assume
-        when(handlingEventFactory.createHandlingEvent(any(LocalDateTime.class), any(LocalDateTime.class),
-                any(TrackingId.class), any(VoyageNumber.class), any(UnLocode.class), any(HandlingEvent.Type.class)))
-                .thenReturn(new HandlingEvent(cargo, LocalDateTime.now(), LocalDateTime.now(), HandlingEvent.Type.LOAD, SampleLocations.STOCKHOLM, SampleVoyages.CM001));
-        doNothing().when(handlingEventRepository).store(any(HandlingEvent.class));
-        doNothing().when(applicationEvents).cargoWasHandled(any(HandlingEvent.class));
-        
-        //call registerHandlingEvent
-        service.registerHandlingEvent(LocalDateTime.now(), cargo.getTrackingId(), SampleVoyages.CM001.getVoyageNumber(),
-                SampleLocations.STOCKHOLM.getUnLocode(), HandlingEvent.Type.LOAD);
-        
-        //verify
-        verify(handlingEventFactory, times(1)).createHandlingEvent(any(LocalDateTime.class), any(LocalDateTime.class),
-                any(TrackingId.class), any(VoyageNumber.class), any(UnLocode.class), any(HandlingEvent.Type.class));
-        verify(handlingEventRepository, times(1)).store(any(HandlingEvent.class));
-        verify(applicationEvents, times(1)).cargoWasHandled(any(HandlingEvent.class));
-        
-        verifyNoMoreInteractions(handlingEventFactory, handlingEventRepository, applicationEvents);
-    }
+
+  private final ApplicationEvents applicationEvents = mock(ApplicationEvents.class);
+  private final HandlingEventRepository handlingEventRepository =
+      mock(HandlingEventRepository.class);
+  private final HandlingEventFactory handlingEventFactory = mock(HandlingEventFactory.class);
+  private final Cargo cargo =
+      new Cargo(
+          new TrackingId("ABC"),
+          new RouteSpecification(SampleLocations.HAMBURG, SampleLocations.TOKYO, LocalDate.now()));
+  private DefaultHandlingEventService service;
+
+  @Before
+  public void setUp() {
+    service =
+        new DefaultHandlingEventService(
+            applicationEvents, handlingEventRepository, handlingEventFactory);
+  }
+
+  @Test
+  public void testRegisterEvent() throws Exception {
+    // assume
+    when(handlingEventFactory.createHandlingEvent(
+            any(LocalDateTime.class),
+            any(LocalDateTime.class),
+            any(TrackingId.class),
+            any(VoyageNumber.class),
+            any(UnLocode.class),
+            any(HandlingEvent.Type.class)))
+        .thenReturn(
+            new HandlingEvent(
+                cargo,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                HandlingEvent.Type.LOAD,
+                SampleLocations.STOCKHOLM,
+                SampleVoyages.CM001));
+    doNothing().when(handlingEventRepository).store(any(HandlingEvent.class));
+    doNothing().when(applicationEvents).cargoWasHandled(any(HandlingEvent.class));
+
+    // call registerHandlingEvent
+    service.registerHandlingEvent(
+        LocalDateTime.now(),
+        cargo.getTrackingId(),
+        SampleVoyages.CM001.getVoyageNumber(),
+        SampleLocations.STOCKHOLM.getUnLocode(),
+        HandlingEvent.Type.LOAD);
+
+    // verify
+    verify(handlingEventFactory, times(1))
+        .createHandlingEvent(
+            any(LocalDateTime.class),
+            any(LocalDateTime.class),
+            any(TrackingId.class),
+            any(VoyageNumber.class),
+            any(UnLocode.class),
+            any(HandlingEvent.Type.class));
+    verify(handlingEventRepository, times(1)).store(any(HandlingEvent.class));
+    verify(applicationEvents, times(1)).cargoWasHandled(any(HandlingEvent.class));
+
+    verifyNoMoreInteractions(handlingEventFactory, handlingEventRepository, applicationEvents);
+  }
 }

@@ -8,7 +8,7 @@
         <dependencies>
             <module name="com.fasterxml.jackson.datatype.jackson-datatype-jsr310" services="import"/>
             <module name="com.fasterxml.jackson.datatype.jackson-datatype-jdk8" services="import"/>
-            <module name="jdk.unsupported" />
+            <module name="jdk.unsupported"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

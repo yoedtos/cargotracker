@@ -1,5 +1,27 @@
 package org.eclipse.cargotracker.scenario;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.eclipse.cargotracker.Deployments.addApplicationBase;
+import static org.eclipse.cargotracker.Deployments.addDomainModels;
+import static org.eclipse.cargotracker.Deployments.addDomainRepositories;
+import static org.eclipse.cargotracker.Deployments.addDomainService;
+import static org.eclipse.cargotracker.Deployments.addExtraJars;
+import static org.eclipse.cargotracker.Deployments.addInfraBase;
+import static org.eclipse.cargotracker.Deployments.addInfraPersistence;
+
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Status;
+import javax.transaction.UserTransaction;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.ApplicationEvents;
 import org.eclipse.cargotracker.application.BookingService;
@@ -9,7 +31,15 @@ import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.internal.DefaultCargoInspectionService;
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
 import org.eclipse.cargotracker.application.util.DateUtil;
-import org.eclipse.cargotracker.domain.model.cargo.*;
+import org.eclipse.cargotracker.domain.model.cargo.Cargo;
+import org.eclipse.cargotracker.domain.model.cargo.CargoRepository;
+import org.eclipse.cargotracker.domain.model.cargo.HandlingActivity;
+import org.eclipse.cargotracker.domain.model.cargo.Itinerary;
+import org.eclipse.cargotracker.domain.model.cargo.Leg;
+import org.eclipse.cargotracker.domain.model.cargo.RouteSpecification;
+import org.eclipse.cargotracker.domain.model.cargo.RoutingStatus;
+import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
+import org.eclipse.cargotracker.domain.model.cargo.TransportStatus;
 import org.eclipse.cargotracker.domain.model.handling.CannotCreateHandlingEventException;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEventFactory;
@@ -36,678 +66,722 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.Status;
-import javax.transaction.UserTransaction;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.eclipse.cargotracker.Deployments.*;
-
 @RunWith(Arquillian.class)
 @Category(IntegrationTests.class)
 public class CargoLifecycleScenarioTest {
 
-    private static final Logger LOGGER = Logger.getLogger(CargoLifecycleScenarioTest.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(CargoLifecycleScenarioTest.class.getName());
+  /*
+   * Test setup: A cargo should be shipped from Hongkong to
+   * SampleLocations.STOCKHOLM, and it should arrive in no more than two weeks.
+   */
+  private static Location origin = SampleLocations.HONGKONG;
+  private static Location destination = SampleLocations.STOCKHOLM;
+  private static LocalDate arrivalDeadline = DateUtil.toDate("2014-03-18");
+  private static TrackingId trackingId;
+  @Inject UserTransaction utx;
+  /**
+   * Repository implementations are part of the infrastructure layer, which in this test is stubbed
+   * out by in-memory replacements.
+   */
+  HandlingEventRepository handlingEventRepository;
+  @Inject CargoRepository cargoRepository;
+  @Inject LocationRepository locationRepository;
+  VoyageRepository voyageRepository;
+  /**
+   * This interface is part of the application layer, and defines a number of events that occur
+   * during aplication execution. It is used for message-driving and is implemented using JMS.
+   *
+   * <p>In this test it is stubbed with synchronous calls.
+   */
+  ApplicationEvents applicationEvents;
+  /**
+   * These three components all belong to the application layer, and map against use cases of the
+   * application. The "real" implementations are used in this lifecycle test, but wired with stubbed
+   * infrastructure.
+   */
+  @Inject BookingService bookingService;
+  @Inject HandlingEventService handlingEventService;
+  CargoInspectionService cargoInspectionService;
+  /**
+   * This factory is part of the handling aggregate and belongs to the domain layer. Similar to the
+   * application layer components, the "real" implementation is used here too, wired with stubbed
+   * infrastructure.
+   */
+  HandlingEventFactory handlingEventFactory;
+  /**
+   * This is a domain service interface, whose implementation is part of the infrastructure layer
+   * (remote call to external system).
+   *
+   * <p>It is stubbed in this test.
+   */
+  RoutingService routingService;
+  @PersistenceContext private EntityManager entityManager;
 
-    @PersistenceContext
-    private EntityManager entityManager;
+  @Deployment
+  public static WebArchive createDeployment() {
 
-    @Inject
-    UserTransaction utx;
+    WebArchive war = ShrinkWrap.create(WebArchive.class);
 
-    @Before
-    public void setUp() throws Exception {
-        startTransaction();
+    addExtraJars(war);
+    addDomainModels(war);
+    addDomainRepositories(war);
+    addInfraBase(war);
+    addInfraPersistence(war);
+    addApplicationBase(war);
+
+    addDomainService(war);
+    // add fake routing service to isolate the external APIs.
+    war.addClass(RoutingServiceStub.class);
+
+    // add JMS package
+    // addInfraMessaging(war);
+
+    // Now pickup application service to setup in test.
+    war.addClass(ApplicationEvents.class)
+        // use a ApplicationEvents stub bean instead to isolate the jms facilities
+        .addClass(SynchronousApplicationEventsStub.class)
+        .addClass(HandlingEventRegistrationAttempt.class)
+
+        // add other application service
+        .addClass(BookingService.class)
+        .addClass(HandlingEventService.class)
+        .addClass(CargoInspectionService.class)
+        // Application layer components
+        .addClass(DefaultBookingService.class)
+        .addClass(DefaultHandlingEventService.class)
+        .addClass(DefaultCargoInspectionService.class);
+
+    // Sample data.
+    war.addClass(CargoLifecycleScenarioTestDataGenerator.class)
+        .addClass(SampleLocations.class)
+        .addClass(SampleVoyages.class);
+
+    // add persistence unit descriptor
+    war.addAsResource("test-persistence.xml", "META-INF/persistence.xml");
+    war.addAsResource("test-jboss-logging.properties", "jboss-logging.properties");
+    war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    // add web xml
+    war.addAsWebInfResource("test-web.xml", "web.xml");
+
+    LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
+
+    return war;
+  }
+
+  @Before
+  public void setUp() throws Exception {
+    startTransaction();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    commitTransaction();
+  }
+
+  public void startTransaction() throws Exception {
+    utx.begin();
+    entityManager.joinTransaction();
+  }
+
+  public void commitTransaction() throws Exception {
+    LOGGER.log(Level.INFO, "UserTransaction status is: {0}", utx.getStatus());
+    if (utx.getStatus() == Status.STATUS_ACTIVE) {
+      utx.commit();
     }
+  }
 
-    @After
-    public void tearDown() throws Exception {
-        commitTransaction();
-    }
+  // Split the original testCargoFromHongkongToStockholm into steps.
 
-    public void startTransaction() throws Exception {
-        utx.begin();
-        entityManager.joinTransaction();
-    }
+  /*
+   * Use case 1: booking
+   *
+   * A new cargo is booked, and the unique tracking id is assigned to the cargo.
+   */
+  @Test
+  @InSequence(1)
+  public void testBookNewCargo() throws Exception {
+    trackingId =
+        bookingService.bookNewCargo(
+            origin.getUnLocode(), destination.getUnLocode(), arrivalDeadline);
 
-    public void commitTransaction() throws Exception {
-        LOGGER.log(Level.INFO, "UserTransaction status is: {0}", utx.getStatus());
-        if (utx.getStatus() == Status.STATUS_ACTIVE) {
-            utx.commit();
-        }
-    }
-
-    @Deployment
-    public static WebArchive createDeployment() {
-
-        WebArchive war = ShrinkWrap.create(WebArchive.class);
-
-        addExtraJars(war);
-        addDomainModels(war);
-        addDomainRepositories(war);
-        addInfraBase(war);
-        addInfraPersistence(war);
-        addApplicationBase(war);
-
-        addDomainService(war);
-        // add fake routing service to isolate the external APIs.
-        war.addClass(RoutingServiceStub.class);
-
-        // add JMS package
-        //addInfraMessaging(war);
-
-        // Now pickup application service to setup in test.
-        war.addClass(ApplicationEvents.class)
-                // use a ApplicationEvents stub bean instead to isolate the jms facilities
-                .addClass(SynchronousApplicationEventsStub.class)
-                .addClass(HandlingEventRegistrationAttempt.class)
-
-                //add other application service
-                .addClass(BookingService.class)
-                .addClass(HandlingEventService.class)
-                .addClass(CargoInspectionService.class)
-                // Application layer components
-                .addClass(DefaultBookingService.class)
-                .addClass(DefaultHandlingEventService.class)
-                .addClass(DefaultCargoInspectionService.class);
-
-
-        // Sample data.
-        war.addClass(CargoLifecycleScenarioTestDataGenerator.class)
-                .addClass(SampleLocations.class)
-                .addClass(SampleVoyages.class);
-
-        // add persistence unit descriptor
-        war.addAsResource("test-persistence.xml", "META-INF/persistence.xml");
-        war.addAsResource("test-jboss-logging.properties", "jboss-logging.properties");
-        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
-        // add web xml
-        war.addAsWebInfResource("test-web.xml", "web.xml");
-
-        LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
-
-        return war;
-    }
-
-
-    /**
-     * Repository implementations are part of the infrastructure layer, which in
-     * this test is stubbed out by in-memory replacements.
-     */
-    HandlingEventRepository handlingEventRepository;
-
-    @Inject
-    CargoRepository cargoRepository;
-
-    @Inject
-    LocationRepository locationRepository;
-    VoyageRepository voyageRepository;
-    /**
-     * This interface is part of the application layer, and defines a number of
-     * events that occur during aplication execution. It is used for message-driving
-     * and is implemented using JMS.
-     * <p>
-     * In this test it is stubbed with synchronous calls.
-     */
-    ApplicationEvents applicationEvents;
-    /**
-     * These three components all belong to the application layer, and map against
-     * use cases of the application. The "real" implementations are used in this
-     * lifecycle test, but wired with stubbed infrastructure.
-     */
-    @Inject
-    BookingService bookingService;
-
-    @Inject
-    HandlingEventService handlingEventService;
-    CargoInspectionService cargoInspectionService;
-    /**
-     * This factory is part of the handling aggregate and belongs to the domain
-     * layer. Similar to the application layer components, the "real" implementation
-     * is used here too, wired with stubbed infrastructure.
-     */
-    HandlingEventFactory handlingEventFactory;
-    /**
-     * This is a domain service interface, whose implementation is part of the
-     * infrastructure layer (remote call to external system).
-     * <p>
-     * It is stubbed in this test.
-     */
-    RoutingService routingService;
-
-
+    LOGGER.log(Level.INFO, "book a new cargo::tracking id: {0}", trackingId);
     /*
-     * Test setup: A cargo should be shipped from Hongkong to
-     * SampleLocations.STOCKHOLM, and it should arrive in no more than two weeks.
+     * The tracking id can be used to lookup the cargo in the repository.
+     *
+     * Important: The cargo, and thus the domain model, is responsible for
+     * determining the status of the cargo, whether it is on the right track or not
+     * and so on. This is core domain logic.
+     *
+     * Tracking the cargo basically amounts to presenting information extracted from
+     * the cargo aggregate in a suitable way.
      */
-    private static Location origin = SampleLocations.HONGKONG;
-    private static Location destination = SampleLocations.STOCKHOLM;
-    private static LocalDate arrivalDeadline = DateUtil.toDate("2014-03-18");
+    commitTransaction();
 
-    private static TrackingId trackingId;
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    assertThat(cargo).isNotNull();
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
+    assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.NOT_ROUTED);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getEstimatedTimeOfArrival()).isNull();
+    assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+  }
 
+  /*
+   * Use case 2: routing
+   *
+   * A number of possible routes for this cargo is requested and may be presented
+   * to the customer in some way for him/her to choose from. Selection could be
+   * affected by things like price and time of delivery, but this test simply uses
+   * an arbitrary selection to mimic that process.
+   *
+   * The cargo is then assigned to the selected route, described by an itinerary.
+   */
+  @Test
+  @InSequence(2)
+  public void testRouting() throws Exception {
+    LOGGER.log(Level.INFO, "assign to route::tracking id: {0}", trackingId);
+    Cargo cargo = findCargo();
+    List<Itinerary> itineraries = bookingService.requestPossibleRoutesForCargo(trackingId);
+    Itinerary itinerary = selectPreferredItinerary(itineraries);
+    cargo.assignToRoute(itinerary);
 
-    //Split the original testCargoFromHongkongToStockholm into steps.
+    commitTransaction();
 
-    /*
-     * Use case 1: booking
-     *
-     * A new cargo is booked, and the unique tracking id is assigned to the cargo.
-     */
-    @Test
-    @InSequence(1)
-    public void testBookNewCargo() throws Exception {
-        trackingId = bookingService.bookNewCargo(origin.getUnLocode(), destination.getUnLocode(),
-                arrivalDeadline);
+    // verify in new tx
+    startTransaction();
+    var result = findCargo();
+    LOGGER.log(
+        Level.INFO, "after route is assigned, the itinerary is : {0}", result.getItinerary());
+    LOGGER.log(
+        Level.INFO, "after route is assigned, the delivery status: {0}", result.getDelivery());
 
-        LOGGER.log(Level.INFO, "book a new cargo::tracking id: {0}", trackingId);
-        /*
-         * The tracking id can be used to lookup the cargo in the repository.
-         *
-         * Important: The cargo, and thus the domain model, is responsible for
-         * determining the status of the cargo, whether it is on the right track or not
-         * and so on. This is core domain logic.
-         *
-         * Tracking the cargo basically amounts to presenting information extracted from
-         * the cargo aggregate in a suitable way.
-         */
-        commitTransaction();
+    assertThat(result.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
+    assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
+    assertThat(result.getDelivery().getEstimatedTimeOfArrival()).isNotNull();
+    assertThat(result.getDelivery().getNextExpectedActivity())
+        .isEqualTo(new HandlingActivity(HandlingEvent.Type.RECEIVE, SampleLocations.HONGKONG));
+  }
 
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        assertThat(cargo).isNotNull();
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
-        assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.NOT_ROUTED);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getEstimatedTimeOfArrival()).isNull();
-        assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+  /*
+   * Use case 3: handling
+   *
+   * A handling event registration attempt will be formed from parsing the data
+   * coming in as a handling report either via the web service interface or as an
+   * uploaded CSV file.
+   *
+   * The handling event factory tries to create a HandlingEvent from the attempt,
+   * and if the factory decides that this is a plausible handling event, it is
+   * stored. If the attempt is invalid, for example if no cargo exists for the
+   * specfied tracking id, the attempt is rejected.
+   *
+   * Handling begins: cargo is received in Hongkong.
+   */
+  @Test
+  @InSequence(3)
+  public void testReceiveInHongKong() throws Exception {
+    LOGGER.log(Level.INFO, "receive in HONGKONG::tracking id: {0}", trackingId);
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-01", "00:00"),
+        trackingId,
+        null,
+        SampleLocations.HONGKONG.getUnLocode(),
+        HandlingEvent.Type.RECEIVE);
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HONGKONG);
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(
+            new HandlingActivity(
+                HandlingEvent.Type.LOAD, SampleLocations.HONGKONG, SampleVoyages.v100));
+  }
+
+  /// Next event: Load onto voyage SampleVoyages.v100 in Hongkong
+  @Test
+  @InSequence(4)
+  public void testLoadInHongKong() throws Exception {
+    LOGGER.log(Level.INFO, "load in HONGKONG::tracking id: {0}", trackingId);
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-03", "00:00"),
+        trackingId,
+        SampleVoyages.v100.getVoyageNumber(),
+        SampleLocations.HONGKONG.getUnLocode(),
+        HandlingEvent.Type.LOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v100);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HONGKONG);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(
+            new HandlingActivity(
+                HandlingEvent.Type.UNLOAD, SampleLocations.NEWYORK, SampleVoyages.v100));
+  }
+
+  /*
+   * Here's an attempt to register a handling event that's not valid because there
+   * is no voyage with the specified voyage number, and there's no location with
+   * the specified UN Locode either.
+   *
+   * This attempt will be rejected and will not affect the cargo delivery in any
+   * way.
+   */
+  @Test
+  @InSequence(5)
+  public void testCannotCreateHandlingEventException() throws Exception {
+    LOGGER.log(Level.INFO, "test CannotCreateHandlingEventException::tracking id: {0}", trackingId);
+    Cargo cargo = findCargo();
+    VoyageNumber noSuchVoyageNumber = new VoyageNumber("XX000");
+    UnLocode noSuchUnLocode = new UnLocode("ZZZZZ");
+
+    assertThatThrownBy(
+            () ->
+                handlingEventService.registerHandlingEvent(
+                    DateUtil.toDateTime("2014-03-05", "00:00"),
+                    trackingId,
+                    noSuchVoyageNumber,
+                    noSuchUnLocode,
+                    HandlingEvent.Type.LOAD),
+            "Should not be able to register a handling event with invalid location and voyage")
+        .isInstanceOf(CannotCreateHandlingEventException.class);
+  }
+
+  // Cargo is now (incorrectly) unloaded in Tokyo
+  @Test
+  @InSequence(6)
+  public void testUnloadedIncorrectlyInTokyo() throws Exception {
+    LOGGER.log(Level.INFO, "unload in Tokyo incorrectly, tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-05", "00:00"),
+        trackingId,
+        SampleVoyages.v100.getVoyageNumber(),
+        SampleLocations.TOKYO.getUnLocode(),
+        HandlingEvent.Type.UNLOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - cargo is misdirected!
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.TOKYO);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
+    assertThat(cargo.getDelivery().isMisdirected()).isTrue();
+    assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+  }
+
+  // -- Cargo needs to be rerouted --
+  // TODO [TDD] cleaner reroute from "earliest location from where the new route
+  // originates"
+  // Specify a new route, this time from Tokyo (where it was incorrectly unloaded)
+  // to SampleLocations.STOCKHOLM
+  @Test
+  @InSequence(7)
+  public void testNewRoute() throws Exception {
+    LOGGER.log(Level.INFO, "specify new route spec, tracking id: {0}", trackingId);
+    Cargo cargo = findCargo();
+    RouteSpecification fromTokyo =
+        new RouteSpecification(
+            locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
+            locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
+            arrivalDeadline);
+    cargo.specifyNewRoute(fromTokyo);
+
+    cargoRepository.store(cargo);
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+
+    var result = findCargo();
+
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new route spec, route spec is : {0}",
+        result.getRouteSpecification());
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new route spec, the itinerary is : {0}",
+        result.getItinerary());
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new route spec, the delivery status: {0}",
+        result.getDelivery());
+
+    // The old itinerary does not satisfy the new specification
+    assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.MISROUTED);
+    assertThat(result.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+  }
+
+  // Repeat procedure of selecting one out of a number of possible routes
+  // satisfying the route spec
+  @Test
+  @InSequence(8)
+  public void testNewItinerary() throws Exception {
+    LOGGER.log(Level.INFO, "assign to new itinerary, tracking id: {0}", trackingId);
+    Cargo cargo = findCargo();
+
+    List<Itinerary> newItineraries =
+        bookingService.requestPossibleRoutesForCargo(cargo.getTrackingId());
+    Itinerary newItinerary = selectPreferredItinerary(newItineraries);
+    cargo.assignToRoute(newItinerary);
+
+    cargoRepository.store(cargo);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+
+    var result = findCargo();
+
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new itinerary, route spec is : {0}",
+        result.getRouteSpecification());
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new itinerary, the itinerary is : {0}",
+        result.getItinerary());
+    LOGGER.log(
+        Level.INFO,
+        "after assigned to new itinerary, the delivery status: {0}",
+        result.getDelivery());
+
+    // New itinerary should satisfy new route
+    assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
+
+    // TODO we can't handle the face that after a reroute, the cargo isn't misdirected anymore
+    // assertThat(cargo.isMisdirected()).isFalse();
+    // assertThat(cargo.nextExpectedActivity())
+    // .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.TOKYO,
+    // SampleVoyages.v300));
+    //
+    // When the Cargo is assigned to a new itinerary, but the `misredirected` status is still true.
+    // it will set NO_ACTIVITY as next expected activity, but logically it should work as new route
+    // assigned the Cargo
+    // and has a next expected activity.
+    // assertThat(cargo.getDelivery().getNextExpectedActivity())
+    //        .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.TOKYO,
+    // SampleVoyages.v300));
+
+  }
+
+  // -- Cargo has been rerouted, shipping continues --
+  // Load in Tokyo
+  @Test
+  @InSequence(9)
+  public void testLoadInTokyo() throws Exception {
+    LOGGER.log(Level.INFO, "load in Tokyo now, tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-08", "00:00"),
+        trackingId,
+        SampleVoyages.v300.getVoyageNumber(),
+        SampleLocations.TOKYO.getUnLocode(),
+        HandlingEvent.Type.LOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v300);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.TOKYO);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(
+            new HandlingActivity(
+                HandlingEvent.Type.UNLOAD, SampleLocations.HAMBURG, SampleVoyages.v300));
+  }
+
+  // Unload in Hamburg
+  @Test
+  @InSequence(10)
+  public void testUnloadInHamburg() throws Exception {
+    LOGGER.log(Level.INFO, "unload in Hamburg, tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-12", "00:00"),
+        trackingId,
+        SampleVoyages.v300.getVoyageNumber(),
+        SampleLocations.HAMBURG.getUnLocode(),
+        HandlingEvent.Type.UNLOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HAMBURG);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(
+            new HandlingActivity(
+                HandlingEvent.Type.LOAD, SampleLocations.HAMBURG, SampleVoyages.v400));
+  }
+
+  // Load in Hamburg
+  @Test
+  @InSequence(11)
+  public void testLoadInHamburg() throws Exception {
+    LOGGER.log(Level.INFO, "load in Hamburg,  tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-14", "00:00"),
+        trackingId,
+        SampleVoyages.v400.getVoyageNumber(),
+        SampleLocations.HAMBURG.getUnLocode(),
+        HandlingEvent.Type.LOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v400);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HAMBURG);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(
+            new HandlingActivity(
+                HandlingEvent.Type.UNLOAD, SampleLocations.STOCKHOLM, SampleVoyages.v400));
+  }
+
+  // Unload in SampleLocations.STOCKHOLM
+  @Test
+  @InSequence(12)
+  public void testUnload_in_STOCKHOLM() throws Exception {
+    LOGGER.log(Level.INFO, "unload in STOCKHOLM, tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-15", "00:00"),
+        trackingId,
+        SampleVoyages.v400.getVoyageNumber(),
+        SampleLocations.STOCKHOLM.getUnLocode(),
+        HandlingEvent.Type.UNLOAD);
+
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.STOCKHOLM);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity())
+        .isEqualTo(new HandlingActivity(HandlingEvent.Type.CLAIM, SampleLocations.STOCKHOLM));
+  }
+
+  // Finally, cargo is claimed in SampleLocations.STOCKHOLM. This ends the cargo
+  // lifecycle from our perspective.
+  @Test
+  @InSequence(13)
+  public void testClaim_in_STOCKHOLM() throws Exception {
+    LOGGER.log(
+        Level.INFO, "claim in STOCKHOLM, the cargo is arrived, tracking id: {0}", trackingId);
+
+    handlingEventService.registerHandlingEvent(
+        DateUtil.toDateTime("2014-03-16", "00:00"),
+        trackingId,
+        null,
+        SampleLocations.STOCKHOLM.getUnLocode(),
+        HandlingEvent.Type.CLAIM);
+    commitTransaction();
+
+    // verify in new tx
+    startTransaction();
+    Cargo cargo = findCargo();
+    // Check current state - should be ok
+    assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
+    assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.STOCKHOLM);
+    assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.CLAIMED);
+    assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+    assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
+  }
+
+  /*
+   * Utility stubs below.
+   */
+  private Itinerary selectPreferredItinerary(List<Itinerary> itineraries) {
+    return itineraries.get(0);
+  }
+
+  private Cargo findCargo() {
+    var cargo = cargoRepository.find(trackingId);
+    LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
+    LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
+    // this.entityManager.refresh(cargo);
+
+    return cargo;
+    //        var cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
+    //                .setParameter("trackingId", trackingId).getSingleResult();
+    //        LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
+    //        LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
+    //        return cargo;
+  }
+
+  //    @Before
+  //    public void setUp() throws Exception {
+  ////        routingService = routeSpecification -> {
+  //            if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
+  //                // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
+  //                return Arrays.asList(new Itinerary(Arrays.asList(
+  //                        new Leg(SampleVoyages.v100, SampleLocations.HONGKONG,
+  // SampleLocations.NEWYORK,
+  //                                DateUtil.toDateTime("2014-03-03", "00:00"),
+  // DateUtil.toDateTime("2014-03-09", "00:00")),
+  //                        new Leg(SampleVoyages.v200, SampleLocations.NEWYORK,
+  // SampleLocations.CHICAGO,
+  //                                DateUtil.toDateTime("2014-03-10", "00:00"),
+  // DateUtil.toDateTime("2014-03-14", "00:00")),
+  //                        new Leg(SampleVoyages.v200, SampleLocations.CHICAGO,
+  // SampleLocations.STOCKHOLM,
+  //                                DateUtil.toDateTime("2014-03-07", "00:00"),
+  // DateUtil.toDateTime("2014-03-11", "00:00")))));
+  //            } else {
+  //                // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
+  //                // Tokyo
+  //                return Arrays.asList(new Itinerary(Arrays.asList(
+  //                        new Leg(SampleVoyages.v300, SampleLocations.TOKYO,
+  // SampleLocations.HAMBURG,
+  //                                DateUtil.toDateTime("2014-03-08", "00:00"),
+  // DateUtil.toDateTime("2014-03-12", "00:00")),
+  //                        new Leg(SampleVoyages.v400, SampleLocations.HAMBURG,
+  // SampleLocations.STOCKHOLM,
+  //                                DateUtil.toDateTime("2014-03-14", "00:00"),
+  // DateUtil.toDateTime("2014-03-15", "00:00")))));
+  //            }
+  //        };
+
+  //        applicationEvents = new SynchronousApplicationEventsStub();
+  // In-memory implementations of the repositories
+  //        handlingEventRepository = new HandlingEventRepositoryInMem();
+  //        cargoRepository = new CargoRepositoryInMem();
+  //        locationRepository = new LocationRepositoryInMem();
+  //        voyageRepository = new VoyageRepositoryInMem();
+  // Actual factories and application services, wired with stubbed or in-memory
+  // infrastructure
+  //        handlingEventFactory = new HandlingEventFactory(cargoRepository, voyageRepository,
+  // locationRepository);
+  //        cargoInspectionService = new CargoInspectionServiceImpl(applicationEvents,
+  // cargoRepository, handlingEventRepository);
+  //        handlingEventService = new DefaultHandlingEventService(handlingEventRepository,
+  // applicationEvents, handlingEventFactory);
+  //        bookingService = new BookingServiceImpl(cargoRepository, locationRepository,
+  // routingService);
+  // Circular dependency when doing synchrounous calls
+  //        ((SynchronousApplicationEventsStub)
+  // applicationEvents).setCargoInspectionService(cargoInspectionService);
+  //    }
+
+  @ApplicationScoped
+  public static class RoutingServiceStub implements RoutingService {
+
+    private static final Logger LOGGER = Logger.getLogger(RoutingServiceStub.class.getName());
+
+    @Inject private LocationRepository locationRepository;
+
+    @Inject private VoyageRepository voyageRepository;
+
+    @Override
+    public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
+      LOGGER.log(Level.INFO, "fetchRoutesForSpecification:: {0}", routeSpecification);
+      if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
+        // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
+        return Arrays.asList(
+            new Itinerary(
+                Arrays.asList(
+                    new Leg(
+                        voyageRepository.find(SampleVoyages.v100.getVoyageNumber()),
+                        locationRepository.find(SampleLocations.HONGKONG.getUnLocode()),
+                        locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
+                        DateUtil.toDateTime("2014-03-03", "00:00"),
+                        DateUtil.toDateTime("2014-03-09", "00:00")),
+                    new Leg(
+                        voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
+                        locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
+                        locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
+                        DateUtil.toDateTime("2014-03-10", "00:00"),
+                        DateUtil.toDateTime("2014-03-14", "00:00")),
+                    new Leg(
+                        voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
+                        locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
+                        locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
+                        DateUtil.toDateTime("2014-03-07", "00:00"),
+                        DateUtil.toDateTime("2014-03-11", "00:00")))));
+      } else {
+        // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
+        // Tokyo
+        return Arrays.asList(
+            new Itinerary(
+                Arrays.asList(
+                    new Leg(
+                        voyageRepository.find(SampleVoyages.v300.getVoyageNumber()),
+                        locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
+                        locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
+                        DateUtil.toDateTime("2014-03-08", "00:00"),
+                        DateUtil.toDateTime("2014-03-12", "00:00")),
+                    new Leg(
+                        voyageRepository.find(SampleVoyages.v400.getVoyageNumber()),
+                        locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
+                        locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
+                        DateUtil.toDateTime("2014-03-14", "00:00"),
+                        DateUtil.toDateTime("2014-03-15", "00:00")))));
+      }
+    }
+  }
+
+  @ApplicationScoped
+  public static class SynchronousApplicationEventsStub implements ApplicationEvents {
+
+    @Inject Instance<CargoInspectionService> cargoInspectionServiceInstance;
+
+    // no-args constructor required by CDI
+    public SynchronousApplicationEventsStub() {}
+
+    @Override
+    public void cargoWasHandled(HandlingEvent event) {
+      System.out.println("EVENT: cargo was handled: " + event);
+      cargoInspectionServiceInstance.get().inspectCargo(event.getCargo().getTrackingId());
     }
 
-    /*
-     * Use case 2: routing
-     *
-     * A number of possible routes for this cargo is requested and may be presented
-     * to the customer in some way for him/her to choose from. Selection could be
-     * affected by things like price and time of delivery, but this test simply uses
-     * an arbitrary selection to mimic that process.
-     *
-     * The cargo is then assigned to the selected route, described by an itinerary.
-     */
-    @Test
-    @InSequence(2)
-    public void testRouting() throws Exception {
-        LOGGER.log(Level.INFO, "assign to route::tracking id: {0}", trackingId);
-        Cargo cargo = findCargo();
-        List<Itinerary> itineraries = bookingService.requestPossibleRoutesForCargo(trackingId);
-        Itinerary itinerary = selectPreferredItinerary(itineraries);
-        cargo.assignToRoute(itinerary);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        var result = findCargo();
-        LOGGER.log(Level.INFO, "after route is assigned, the itinerary is : {0}", result.getItinerary());
-        LOGGER.log(Level.INFO, "after route is assigned, the delivery status: {0}", result.getDelivery());
-
-        assertThat(result.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.NOT_RECEIVED);
-        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
-        assertThat(result.getDelivery().getEstimatedTimeOfArrival()).isNotNull();
-        assertThat(result.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.RECEIVE, SampleLocations.HONGKONG));
+    @Override
+    public void cargoWasMisdirected(Cargo cargo) {
+      System.out.println("EVENT: cargo was misdirected");
     }
 
-
-    /*
-     * Use case 3: handling
-     *
-     * A handling event registration attempt will be formed from parsing the data
-     * coming in as a handling report either via the web service interface or as an
-     * uploaded CSV file.
-     *
-     * The handling event factory tries to create a HandlingEvent from the attempt,
-     * and if the factory decides that this is a plausible handling event, it is
-     * stored. If the attempt is invalid, for example if no cargo exists for the
-     * specfied tracking id, the attempt is rejected.
-     *
-     * Handling begins: cargo is received in Hongkong.
-     */
-    @Test
-    @InSequence(3)
-    public void testReceiveInHongKong() throws Exception {
-        LOGGER.log(Level.INFO, "receive in HONGKONG::tracking id: {0}", trackingId);
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-01", "00:00"), trackingId, null,
-                SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.RECEIVE);
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HONGKONG);
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.HONGKONG, SampleVoyages.v100));
-
+    @Override
+    public void cargoHasArrived(Cargo cargo) {
+      System.out.println("EVENT: cargo has arrived: " + cargo.getTrackingId().getIdString());
     }
 
-    /// Next event: Load onto voyage SampleVoyages.v100 in Hongkong
-    @Test
-    @InSequence(4)
-    public void testLoadInHongKong() throws Exception {
-        LOGGER.log(Level.INFO, "load in HONGKONG::tracking id: {0}", trackingId);
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-03", "00:00"), trackingId,
-                SampleVoyages.v100.getVoyageNumber(), SampleLocations.HONGKONG.getUnLocode(), HandlingEvent.Type.LOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v100);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HONGKONG);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.UNLOAD, SampleLocations.NEWYORK, SampleVoyages.v100));
-
+    @Override
+    public void receivedHandlingEventRegistrationAttempt(HandlingEventRegistrationAttempt attempt) {
+      System.out.println("EVENT: received handling event registration attempt");
     }
-
-    /*
-     * Here's an attempt to register a handling event that's not valid because there
-     * is no voyage with the specified voyage number, and there's no location with
-     * the specified UN Locode either.
-     *
-     * This attempt will be rejected and will not affect the cargo delivery in any
-     * way.
-     */
-    @Test
-    @InSequence(5)
-    public void testCannotCreateHandlingEventException() throws Exception {
-        LOGGER.log(Level.INFO, "test CannotCreateHandlingEventException::tracking id: {0}", trackingId);
-        Cargo cargo = findCargo();
-        VoyageNumber noSuchVoyageNumber = new VoyageNumber("XX000");
-        UnLocode noSuchUnLocode = new UnLocode("ZZZZZ");
-
-        assertThatThrownBy(() -> handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-05", "00:00"),
-                trackingId,
-                noSuchVoyageNumber,
-                noSuchUnLocode,
-                HandlingEvent.Type.LOAD),
-                "Should not be able to register a handling event with invalid location and voyage"
-        ).isInstanceOf(CannotCreateHandlingEventException.class);
-    }
-
-    // Cargo is now (incorrectly) unloaded in Tokyo
-    @Test
-    @InSequence(6)
-    public void testUnloadedIncorrectlyInTokyo() throws Exception {
-        LOGGER.log(Level.INFO, "unload in Tokyo incorrectly, tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-05", "00:00"), trackingId,
-                SampleVoyages.v100.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.UNLOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - cargo is misdirected!
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.TOKYO);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
-        assertThat(cargo.getDelivery().isMisdirected()).isTrue();
-        assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
-
-    }
-
-    // -- Cargo needs to be rerouted --
-    // TODO [TDD] cleaner reroute from "earliest location from where the new route
-    // originates"
-    // Specify a new route, this time from Tokyo (where it was incorrectly unloaded)
-    // to SampleLocations.STOCKHOLM
-    @Test
-    @InSequence(7)
-    public void testNewRoute() throws Exception {
-        LOGGER.log(Level.INFO, "specify new route spec, tracking id: {0}", trackingId);
-        Cargo cargo = findCargo();
-        RouteSpecification fromTokyo = new RouteSpecification(
-                locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
-                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
-                arrivalDeadline);
-        cargo.specifyNewRoute(fromTokyo);
-
-        cargoRepository.store(cargo);
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-
-        var result = findCargo();
-
-        LOGGER.log(Level.INFO, "after assigned to new route spec, route spec is : {0}", result.getRouteSpecification());
-        LOGGER.log(Level.INFO, "after assigned to new route spec, the itinerary is : {0}", result.getItinerary());
-        LOGGER.log(Level.INFO, "after assigned to new route spec, the delivery status: {0}", result.getDelivery());
-
-        // The old itinerary does not satisfy the new specification
-        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.MISROUTED);
-        assertThat(result.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
-    }
-
-    // Repeat procedure of selecting one out of a number of possible routes
-    // satisfying the route spec
-    @Test
-    @InSequence(8)
-    public void testNewItinerary() throws Exception {
-        LOGGER.log(Level.INFO, "assign to new itinerary, tracking id: {0}", trackingId);
-        Cargo cargo = findCargo();
-
-        List<Itinerary> newItineraries = bookingService.requestPossibleRoutesForCargo(cargo.getTrackingId());
-        Itinerary newItinerary = selectPreferredItinerary(newItineraries);
-        cargo.assignToRoute(newItinerary);
-
-        cargoRepository.store(cargo);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-
-        var result = findCargo();
-
-        LOGGER.log(Level.INFO, "after assigned to new itinerary, route spec is : {0}", result.getRouteSpecification());
-        LOGGER.log(Level.INFO, "after assigned to new itinerary, the itinerary is : {0}", result.getItinerary());
-        LOGGER.log(Level.INFO, "after assigned to new itinerary, the delivery status: {0}", result.getDelivery());
-
-        // New itinerary should satisfy new route
-        assertThat(result.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
-
-        // TODO we can't handle the face that after a reroute, the cargo isn't misdirected anymore
-        //assertThat(cargo.isMisdirected()).isFalse();
-        //assertThat(cargo.nextExpectedActivity())
-        // .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.TOKYO,  SampleVoyages.v300));
-        //
-        // When the Cargo is assigned to a new itinerary, but the `misredirected` status is still true.
-        // it will set NO_ACTIVITY as next expected activity, but logically it should work as new route assigned the Cargo
-        // and has a next expected activity.
-        //assertThat(cargo.getDelivery().getNextExpectedActivity())
-        //        .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.TOKYO,  SampleVoyages.v300));
-
-    }
-
-
-    // -- Cargo has been rerouted, shipping continues --
-    // Load in Tokyo
-    @Test
-    @InSequence(9)
-    public void testLoadInTokyo() throws Exception {
-        LOGGER.log(Level.INFO, "load in Tokyo now, tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-08", "00:00"), trackingId,
-                SampleVoyages.v300.getVoyageNumber(), SampleLocations.TOKYO.getUnLocode(), HandlingEvent.Type.LOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v300);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.TOKYO);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.UNLOAD, SampleLocations.HAMBURG, SampleVoyages.v300));
-
-    }
-
-    // Unload in Hamburg
-    @Test
-    @InSequence(10)
-    public void testUnloadInHamburg() throws Exception {
-        LOGGER.log(Level.INFO, "unload in Hamburg, tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-12", "00:00"), trackingId,
-                SampleVoyages.v300.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.UNLOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HAMBURG);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.LOAD, SampleLocations.HAMBURG, SampleVoyages.v400));
-    }
-
-    // Load in Hamburg
-    @Test
-    @InSequence(11)
-    public void testLoadInHamburg() throws Exception {
-        LOGGER.log(Level.INFO, "load in Hamburg,  tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-14", "00:00"), trackingId,
-                SampleVoyages.v400.getVoyageNumber(), SampleLocations.HAMBURG.getUnLocode(), HandlingEvent.Type.LOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(SampleVoyages.v400);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.HAMBURG);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.ONBOARD_CARRIER);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.UNLOAD, SampleLocations.STOCKHOLM, SampleVoyages.v400));
-
-    }
-
-    // Unload in SampleLocations.STOCKHOLM
-    @Test
-    @InSequence(12)
-    public void testUnload_in_STOCKHOLM() throws Exception {
-        LOGGER.log(Level.INFO, "unload in STOCKHOLM, tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-15", "00:00"), trackingId,
-                SampleVoyages.v400.getVoyageNumber(), SampleLocations.STOCKHOLM.getUnLocode(),
-                HandlingEvent.Type.UNLOAD);
-
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.STOCKHOLM);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.IN_PORT);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity())
-                .isEqualTo(new HandlingActivity(HandlingEvent.Type.CLAIM, SampleLocations.STOCKHOLM));
-
-    }
-
-    // Finally, cargo is claimed in SampleLocations.STOCKHOLM. This ends the cargo
-    // lifecycle from our perspective.
-    @Test
-    @InSequence(13)
-    public void testClaim_in_STOCKHOLM() throws Exception {
-        LOGGER.log(Level.INFO, "claim in STOCKHOLM, the cargo is arrived, tracking id: {0}", trackingId);
-
-        handlingEventService.registerHandlingEvent(DateUtil.toDateTime("2014-03-16", "00:00"), trackingId, null,
-                SampleLocations.STOCKHOLM.getUnLocode(), HandlingEvent.Type.CLAIM);
-        commitTransaction();
-
-        //verify in new tx
-        startTransaction();
-        Cargo cargo = findCargo();
-        // Check current state - should be ok
-        assertThat(cargo.getDelivery().getCurrentVoyage()).isEqualTo(Voyage.NONE);
-        assertThat(cargo.getDelivery().getLastKnownLocation()).isEqualTo(SampleLocations.STOCKHOLM);
-        assertThat(cargo.getDelivery().getTransportStatus()).isEqualTo(TransportStatus.CLAIMED);
-        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
-        assertThat(cargo.getDelivery().getNextExpectedActivity()).isEqualTo(HandlingActivity.EMPTY);
-    }
-
-    /*
-     * Utility stubs below.
-     */
-    private Itinerary selectPreferredItinerary(List<Itinerary> itineraries) {
-        return itineraries.get(0);
-    }
-
-    private Cargo findCargo() {
-        var cargo = cargoRepository.find(trackingId);
-        LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
-        LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
-        //this.entityManager.refresh(cargo);
-
-        return cargo;
-//        var cargo = entityManager.createNamedQuery("Cargo.findByTrackingId", Cargo.class)
-//                .setParameter("trackingId", trackingId).getSingleResult();
-//        LOGGER.log(Level.INFO, "cargo itinerary: {0}", cargo.getItinerary());
-//        LOGGER.log(Level.INFO, "cargo delivery: {0}", cargo.getDelivery());
-//        return cargo;
-    }
-
-
-//    @Before
-//    public void setUp() throws Exception {
-////        routingService = routeSpecification -> {
-//            if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
-//                // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
-//                return Arrays.asList(new Itinerary(Arrays.asList(
-//                        new Leg(SampleVoyages.v100, SampleLocations.HONGKONG, SampleLocations.NEWYORK,
-//                                DateUtil.toDateTime("2014-03-03", "00:00"), DateUtil.toDateTime("2014-03-09", "00:00")),
-//                        new Leg(SampleVoyages.v200, SampleLocations.NEWYORK, SampleLocations.CHICAGO,
-//                                DateUtil.toDateTime("2014-03-10", "00:00"), DateUtil.toDateTime("2014-03-14", "00:00")),
-//                        new Leg(SampleVoyages.v200, SampleLocations.CHICAGO, SampleLocations.STOCKHOLM,
-//                                DateUtil.toDateTime("2014-03-07", "00:00"), DateUtil.toDateTime("2014-03-11", "00:00")))));
-//            } else {
-//                // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
-//                // Tokyo
-//                return Arrays.asList(new Itinerary(Arrays.asList(
-//                        new Leg(SampleVoyages.v300, SampleLocations.TOKYO, SampleLocations.HAMBURG,
-//                                DateUtil.toDateTime("2014-03-08", "00:00"), DateUtil.toDateTime("2014-03-12", "00:00")),
-//                        new Leg(SampleVoyages.v400, SampleLocations.HAMBURG, SampleLocations.STOCKHOLM,
-//                                DateUtil.toDateTime("2014-03-14", "00:00"), DateUtil.toDateTime("2014-03-15", "00:00")))));
-//            }
-//        };
-
-//        applicationEvents = new SynchronousApplicationEventsStub();
-    // In-memory implementations of the repositories
-//        handlingEventRepository = new HandlingEventRepositoryInMem();
-//        cargoRepository = new CargoRepositoryInMem();
-//        locationRepository = new LocationRepositoryInMem();
-//        voyageRepository = new VoyageRepositoryInMem();
-    // Actual factories and application services, wired with stubbed or in-memory
-    // infrastructure
-//        handlingEventFactory = new HandlingEventFactory(cargoRepository, voyageRepository, locationRepository);
-//        cargoInspectionService = new CargoInspectionServiceImpl(applicationEvents, cargoRepository, handlingEventRepository);
-//        handlingEventService = new DefaultHandlingEventService(handlingEventRepository, applicationEvents, handlingEventFactory);
-//        bookingService = new BookingServiceImpl(cargoRepository, locationRepository, routingService);
-    // Circular dependency when doing synchrounous calls
-//        ((SynchronousApplicationEventsStub) applicationEvents).setCargoInspectionService(cargoInspectionService);
-//    }
-
-    @ApplicationScoped
-    public static class RoutingServiceStub implements RoutingService {
-
-        private static final Logger LOGGER = Logger.getLogger(RoutingServiceStub.class.getName());
-
-        @Inject
-        private LocationRepository locationRepository;
-
-        @Inject
-        private VoyageRepository voyageRepository;
-
-        @Override
-        public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
-            LOGGER.log(Level.INFO, "fetchRoutesForSpecification:: {0}", routeSpecification);
-            if (routeSpecification.getOrigin().equals(SampleLocations.HONGKONG)) {
-                // Hongkong - NYC - Chicago - SampleLocations.STOCKHOLM, initial routing
-                return Arrays.asList(new Itinerary(Arrays.asList(
-                        new Leg(
-                                voyageRepository.find(SampleVoyages.v100.getVoyageNumber()),
-                                locationRepository.find(SampleLocations.HONGKONG.getUnLocode()),
-                                locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
-                                DateUtil.toDateTime("2014-03-03", "00:00"), DateUtil.toDateTime("2014-03-09", "00:00")),
-                        new Leg(
-                                voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
-                                locationRepository.find(SampleLocations.NEWYORK.getUnLocode()),
-                                locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
-                                DateUtil.toDateTime("2014-03-10", "00:00"), DateUtil.toDateTime("2014-03-14", "00:00")),
-                        new Leg(
-                                voyageRepository.find(SampleVoyages.v200.getVoyageNumber()),
-                                locationRepository.find(SampleLocations.CHICAGO.getUnLocode()),
-                                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
-                                DateUtil.toDateTime("2014-03-07", "00:00"), DateUtil.toDateTime("2014-03-11", "00:00"))))
-                );
-            } else {
-                // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
-                // Tokyo
-                return Arrays.asList(new Itinerary(Arrays.asList(
-                        new Leg(
-                                voyageRepository.find(SampleVoyages.v300.getVoyageNumber()),
-                                locationRepository.find(SampleLocations.TOKYO.getUnLocode()),
-                                locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
-                                DateUtil.toDateTime("2014-03-08", "00:00"), DateUtil.toDateTime("2014-03-12", "00:00")),
-                        new Leg(
-                                voyageRepository.find(SampleVoyages.v400.getVoyageNumber()),
-                                locationRepository.find(SampleLocations.HAMBURG.getUnLocode()),
-                                locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()),
-                                DateUtil.toDateTime("2014-03-14", "00:00"), DateUtil.toDateTime("2014-03-15", "00:00"))))
-                );
-            }
-        }
-    }
-
-    @ApplicationScoped
-    public static class SynchronousApplicationEventsStub implements ApplicationEvents {
-
-        @Inject
-        Instance<CargoInspectionService> cargoInspectionServiceInstance;
-
-        //no-args constructor required by CDI
-        public SynchronousApplicationEventsStub() {
-        }
-
-        @Override
-        public void cargoWasHandled(HandlingEvent event) {
-            System.out.println("EVENT: cargo was handled: " + event);
-            cargoInspectionServiceInstance.get().inspectCargo(event.getCargo().getTrackingId());
-        }
-
-        @Override
-        public void cargoWasMisdirected(Cargo cargo) {
-            System.out.println("EVENT: cargo was misdirected");
-        }
-
-        @Override
-        public void cargoHasArrived(Cargo cargo) {
-            System.out.println("EVENT: cargo has arrived: " + cargo.getTrackingId().getIdString());
-        }
-
-        @Override
-        public void receivedHandlingEventRegistrationAttempt(HandlingEventRegistrationAttempt attempt) {
-            System.out.println("EVENT: received handling event registration attempt");
-        }
-    }
+  }
 }

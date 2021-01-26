@@ -1,4 +1,3 @@
 package org.eclipse.cargotracker;
 
-public interface IntegrationTests {
-}
+public interface IntegrationTests {}
