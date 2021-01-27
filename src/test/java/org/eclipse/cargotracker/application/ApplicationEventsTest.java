@@ -4,16 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.cargotracker.Deployments.addApplicationBase;
 import static org.eclipse.cargotracker.Deployments.addDomainModels;
 import static org.eclipse.cargotracker.Deployments.addInfraBase;
-import static org.eclipse.cargotracker.Deployments.addInfraMessaging;
 
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.jms.Destination;
+import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.transaction.UserTransaction;
 import javax.validation.constraints.NotNull;
 import org.eclipse.cargotracker.IntegrationTests;
@@ -27,6 +32,9 @@ import org.eclipse.cargotracker.domain.model.location.SampleLocations;
 import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
+import org.eclipse.cargotracker.infrastructure.messaging.JMSResourcesSetup;
+import org.eclipse.cargotracker.infrastructure.messaging.jms.CargoHandledConsumer;
+import org.eclipse.cargotracker.infrastructure.messaging.jms.HandlingEventRegistrationAttemptConsumer;
 import org.eclipse.cargotracker.infrastructure.messaging.jms.JmsApplicationEvents;
 import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAttempt;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -96,7 +104,10 @@ public class ApplicationEventsTest {
     addDomainModels(war);
     addInfraBase(war);
     // addInfraPersistence(war);
-    addInfraMessaging(war);
+    // addInfraMessaging(war);
+    war.addClass(JMSResourcesSetup.class)
+        .addClass(CargoHandledConsumer.class)
+        .addClass(HandlingEventRegistrationAttemptConsumer.class);
     addApplicationBase(war);
     // addApplicationService(war);
 
@@ -138,7 +149,7 @@ public class ApplicationEventsTest {
 
   @Test
   public void testCargoWasHandled() throws InterruptedException {
-
+    CargoInspectionServiceStub.latch = new CountDownLatch(1);
     var trackingId = new TrackingId("AAA");
     var cargo =
         new Cargo(
@@ -154,13 +165,14 @@ public class ApplicationEventsTest {
             SampleLocations.HONGKONG);
     applicationEvents.cargoWasHandled(event);
 
-    Thread.sleep(5000);
+    CargoInspectionServiceStub.latch.await(1, TimeUnit.SECONDS);
 
     assertThat(cargoInspectionService.getTrackingId()).isEqualTo(trackingId);
   }
 
   @Test
   public void testReceivedHandlingEventRegistrationAttempt() throws Exception {
+    HandlingEventServiceStub.latch = new CountDownLatch(1);
     var trackingId = new TrackingId("AAA");
     var attempt =
         new HandlingEventRegistrationAttempt(
@@ -172,7 +184,7 @@ public class ApplicationEventsTest {
             SampleLocations.HONGKONG.getUnLocode());
     applicationEvents.receivedHandlingEventRegistrationAttempt(attempt);
 
-    Thread.sleep(5000);
+    HandlingEventServiceStub.latch.await(1, TimeUnit.SECONDS);
 
     assertThat(handlingEventService.getTrackingId()).isEqualTo(trackingId);
     assertThat(handlingEventService.getType()).isEqualTo(HandlingEvent.Type.RECEIVE);
@@ -182,8 +194,49 @@ public class ApplicationEventsTest {
         .isEqualTo(SampleLocations.HONGKONG.getUnLocode());
   }
 
+  @Inject JMSContext jmsContext;
+
+  @Resource(lookup = "java:app/jms/MisdirectedCargoQueue")
+  private Destination misdirectedCargoQueue;
+
+  @Resource(lookup = "java:app/jms/DeliveredCargoQueue")
+  private Destination deliveredCargoQueue;
+
+  @Test
+  public void testCargoWasArrived() throws InterruptedException, JMSException {
+    var consumer = jmsContext.createConsumer(deliveredCargoQueue);
+    var trackingId = new TrackingId("AAA");
+    var cargo =
+        new Cargo(
+            trackingId,
+            new RouteSpecification(
+                SampleLocations.HONGKONG, SampleLocations.NEWYORK, LocalDate.now()));
+    applicationEvents.cargoHasArrived(cargo);
+
+    var message = consumer.receive(1000);
+    assertThat(message.getBody(String.class)).isEqualTo("AAA");
+    consumer.close();
+  }
+
+  @Test
+  public void testCargoWasMisdirected() throws InterruptedException, JMSException {
+    var consumer = jmsContext.createConsumer(misdirectedCargoQueue);
+
+    var trackingId = new TrackingId("AAA");
+    var cargo =
+        new Cargo(
+            trackingId,
+            new RouteSpecification(
+                SampleLocations.HONGKONG, SampleLocations.NEWYORK, LocalDate.now()));
+    applicationEvents.cargoWasMisdirected(cargo);
+    var message = consumer.receive(1000);
+    assertThat(message.getBody(String.class)).isEqualTo("AAA");
+    consumer.close();
+  }
+
   @ApplicationScoped
   public static class CargoInspectionServiceStub implements CargoInspectionService {
+    public static CountDownLatch latch;
     @Inject Logger logger;
 
     private TrackingId trackingId;
@@ -192,6 +245,7 @@ public class ApplicationEventsTest {
     public void inspectCargo(@NotNull(message = "Tracking ID is required") TrackingId trackingId) {
       logger.log(Level.INFO, "tracking id: {0}", trackingId);
       this.trackingId = trackingId;
+      latch.countDown();
     }
 
     public TrackingId getTrackingId() {
@@ -201,6 +255,7 @@ public class ApplicationEventsTest {
 
   @ApplicationScoped
   public static class HandlingEventServiceStub implements HandlingEventService {
+    public static CountDownLatch latch;
     @Inject Logger logger;
     private LocalDateTime completionTime;
     private TrackingId trackingId;
@@ -226,6 +281,7 @@ public class ApplicationEventsTest {
       this.voyageNumber = voyageNumber;
       this.unLocode = unLocode;
       this.type = type;
+      latch.countDown();
     }
 
     public LocalDateTime getCompletionTime() {
