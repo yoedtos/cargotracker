@@ -79,7 +79,7 @@ public class ExternalRoutingService implements RoutingService {
                                 logger.log(
                                         Level.FINE,
                                         "Received itinerary that did not satisfy the route"
-                                            + " specification");
+                                                + " specification");
                             }
                         });
 
