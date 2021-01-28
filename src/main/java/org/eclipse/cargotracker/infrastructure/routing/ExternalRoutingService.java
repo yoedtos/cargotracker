@@ -75,8 +75,7 @@ public class ExternalRoutingService implements RoutingService {
                             } else {
                                 LOGGER.log(
                                         Level.FINE,
-                                        "Received itinerary that did not satisfy the route"
-                                            + " specification: {0}",
+                                        "Received itinerary that did not satisfy the route specification: {0}",
                                         itinerary);
                             }
                         });

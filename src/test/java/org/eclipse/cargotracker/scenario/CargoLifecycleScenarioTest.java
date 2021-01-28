@@ -360,8 +360,7 @@ public class CargoLifecycleScenarioTest {
                                         noSuchVoyageNumber,
                                         noSuchUnLocode,
                                         HandlingEvent.Type.LOAD),
-                        "Should not be able to register a handling event with invalid location and"
-                            + " voyage")
+                        "Should not be able to register a handling event with invalid location and voyage")
                 .isInstanceOf(CannotCreateHandlingEventException.class);
     }
 
