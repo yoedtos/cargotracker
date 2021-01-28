@@ -4,7 +4,7 @@
 ![Integration Test with Arquillian Payara Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-managed/badge.svg)
 ![Integration Test with Arquillian Payara Micro Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-micro/badge.svg)
 
-**This is a unofficial fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features sync to the upstream project is in progress.**
+**This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some of the features planned to sync to the upstream project is in progress.**
 
 ## Overview
 
