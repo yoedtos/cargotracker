@@ -6,18 +6,18 @@
 ![Integration Test with Arquillian WildFly Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-managed/badge.svg)
 ![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
 
-
-**This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some of the features planned to sync to the upstream project is in progress.**
-
+**This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features
+planned to sync to the upstream project is in progress.**
 
 ## Overview
 
 The project demonstrates how you can develop applications with Jakarta EE using widely adopted architectural best
-practices like Domain-Driven Design (DDD). The project is directly based on the well known
-original [ DDD book sample codes](https://github.com/citerus/dddsample-core) developed by DDD pioneer Eric Evans'
+practices like Domain-Driven Design (DDD). The source code is directly based on the well known
+original [DDD cargo tracking application](https://github.com/citerus/dddsample-core) developed by DDD pioneer Eric Evans'
 company Domain Language and the Swedish software consulting company Citerus. The cargo example actually comes from Eric
-Evans' seminal book on DDD. The original application is written in Spring, Hibernate and Jetty whereas the application
-is built on Jakarta EE.
+Evans' seminal book on DDD.
+
+The original application is written in Spring, Hibernate and Jetty whereas the application is built on Jakarta EE.
 
 The application is an end-to-end system for keeping track of shipping cargo. It has several interfaces described in the
 following sections.
