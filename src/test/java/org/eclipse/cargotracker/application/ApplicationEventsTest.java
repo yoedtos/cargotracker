@@ -83,8 +83,10 @@ public class ApplicationEventsTest {
     //        assertThat(argumentCaptor.getValue().toString()).contains("AAA");
     //    }
     @Inject private ApplicationEvents applicationEvents;
+
     @Resource(lookup = "java:app/jms/MisdirectedCargoQueue")
     private Destination misdirectedCargoQueue;
+
     @Resource(lookup = "java:app/jms/DeliveredCargoQueue")
     private Destination deliveredCargoQueue;
 
@@ -277,7 +279,8 @@ public class ApplicationEventsTest {
 
             logger.log(
                     Level.INFO,
-                    "completionTime: {0}, tracking id: {1}, voyageNumber: {2}, unLocode: {3}, type: {4}",
+                    "completionTime: {0}, tracking id: {1}, voyageNumber: {2}, unLocode: {3},"
+                        + " type: {4}",
                     new Object[] {completionTime, trackingId, voyageNumber, unLocode, type});
             this.completionTime = completionTime;
             this.trackingId = trackingId;

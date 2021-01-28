@@ -28,7 +28,7 @@ jobs:
           java-version: "11"
       - uses: axel-op/googlejavaformat-action@v3
         with:
-          args: "--aosp  skip-reflowing-long-strings --skip-sorting-imports --replace"
+          args: "--aosp  --skip-reflowing-long-strings --skip-sorting-imports --replace"
           #  version: 1.9
           # Recommended if you use MacOS:
           # githubToken: ${{ secrets.GITHUB_TOKEN }}

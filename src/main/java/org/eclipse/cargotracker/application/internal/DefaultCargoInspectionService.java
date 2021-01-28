@@ -19,7 +19,6 @@ import java.util.logging.Logger;
 @Stateless
 public class DefaultCargoInspectionService implements CargoInspectionService {
 
-
     private static final Logger LOGGER =
             Logger.getLogger(DefaultCargoInspectionService.class.getName());
 
@@ -46,7 +45,6 @@ public class DefaultCargoInspectionService implements CargoInspectionService {
         this.handlingEventRepository = handlingEventRepository;
         this.cargoInspected = cargoInspected;
     }
-
 
     @Override
     public void inspectCargo(TrackingId trackingId) {
