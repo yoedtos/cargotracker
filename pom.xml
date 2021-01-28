@@ -40,7 +40,7 @@
         <maven-surefire-report-plugin.version>3.0.0-M5</maven-surefire-report-plugin.version>
 
         <!-- Cargo maven plugin -->
-        <cargo-maven2-plugin.version>1.8.4</cargo-maven2-plugin.version>
+        <cargo-maven2-plugin.version>1.8.5</cargo-maven2-plugin.version>
 
         <!-- Jakarta EE API -->
         <jakartaee-api.version>8.0.0</jakartaee-api.version>
@@ -50,13 +50,13 @@
         <!-- Test Utilities -->
         <junit.version>4.13.1</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <assertj.version>3.18.1</assertj.version>
+        <assertj.version>3.19.0</assertj.version>
         <!-- By default, skip tests -->
         <skipTests>true</skipTests>
 
         <!-- Payara server -->
         <payara.version>5.2020.7</payara.version>
-        <arquillian-payara.version>2.3.1</arquillian-payara.version>
+        <arquillian-payara.version>2.3.3</arquillian-payara.version>
 
         <!-- Wildfly server -->
         <wildfly.version>22.0.0.Final</wildfly.version>
@@ -177,7 +177,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.11</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -509,9 +509,9 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven-failsafe-plugin.version}</version>
                         <configuration>
-                            <environmentVariables>
-                                <GLASSFISH_HOME>${project.build.directory}/payara5</GLASSFISH_HOME>
-                            </environmentVariables>
+                            <systemPropertyVariables>
+                                <payara.home>${project.build.directory}/payara5</payara.home>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -620,11 +620,8 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>${maven-failsafe-plugin.version}</version>
                         <configuration>
-                            <environmentVariables>
-                                <MICRO_JAR>${project.build.directory}/payara-micro.jar</MICRO_JAR>
-                            </environmentVariables>
                             <systemPropertyVariables>
-                                <!--<payara.microJar>${project.build.directory}/payara-micro.jar</payara.microJar>-->
+                                <payara.microJar>${project.build.directory}/payara-micro.jar</payara.microJar>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

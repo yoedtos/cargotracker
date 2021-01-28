@@ -42,6 +42,7 @@ public class DefaultHandlingEventService implements HandlingEventService {
         this.handlingEventFactory = handlingEventFactory;
     }
 
+
     @Override
     public void registerHandlingEvent(
             LocalDateTime completionTime,
@@ -72,5 +73,6 @@ public class DefaultHandlingEventService implements HandlingEventService {
         applicationEvents.cargoWasHandled(event);
 
         LOGGER.log(Level.INFO, "Registered handling event: {0}", event);
+
     }
 }

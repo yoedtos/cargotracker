@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 @Stateless
 public class DefaultCargoInspectionService implements CargoInspectionService {
 
+
     private static final Logger LOGGER =
             Logger.getLogger(DefaultCargoInspectionService.class.getName());
 
@@ -46,12 +47,13 @@ public class DefaultCargoInspectionService implements CargoInspectionService {
         this.cargoInspected = cargoInspected;
     }
 
+
     @Override
     public void inspectCargo(TrackingId trackingId) {
         Cargo cargo = cargoRepository.find(trackingId);
 
         if (cargo == null) {
-            LOGGER.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
+            logger.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
             return;
         }
 
