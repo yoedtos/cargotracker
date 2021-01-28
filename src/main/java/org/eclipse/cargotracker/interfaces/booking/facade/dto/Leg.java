@@ -4,7 +4,6 @@ import org.eclipse.cargotracker.application.util.DateUtil;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /** DTO for a leg in an itinerary. */
 public class Leg implements Serializable {
@@ -33,8 +32,8 @@ public class Leg implements Serializable {
         this.fromName = fromName;
         this.toUnLocode = toUnLocode;
         this.toName = toName;
-        this.loadTime = loadTime.format(DateTimeFormatter.ofPattern(DT_PATTERN));
-        this.unloadTime = unloadTime.format(DateTimeFormatter.ofPattern(DT_PATTERN));
+        this.loadTime = DateUtil.toString(loadTime);
+        this.unloadTime = DateUtil.toString(unloadTime);
     }
 
     public String getVoyageNumber() {

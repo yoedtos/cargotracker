@@ -10,7 +10,7 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 import org.eclipse.cargotracker.interfaces.booking.facade.dto.RouteCandidate;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,11 +58,14 @@ public class ItineraryCandidateDtoAssembler {
                             voyage,
                             from,
                             to,
-                            LocalDateTime.parse(
-                                    legDTO.getLoadTime(), DateTimeFormatter.ofPattern(DT_PATTERN)),
-                            LocalDateTime.parse(
-                                    legDTO.getUnloadTime(),
-                                    DateTimeFormatter.ofPattern(DT_PATTERN))));
+                            ZonedDateTime.parse(
+                                            legDTO.getLoadTime(),
+                                            DateTimeFormatter.ofPattern(DT_PATTERN))
+                                    .toLocalDateTime(),
+                            ZonedDateTime.parse(
+                                            legDTO.getUnloadTime(),
+                                            DateTimeFormatter.ofPattern(DT_PATTERN))
+                                    .toLocalDateTime()));
         }
 
         return new Itinerary(legs);

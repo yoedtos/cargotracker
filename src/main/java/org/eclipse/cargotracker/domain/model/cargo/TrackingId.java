@@ -31,7 +31,7 @@ public class TrackingId implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof TrackingId)) {
             return false;
         }
 

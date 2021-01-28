@@ -14,14 +14,33 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class HandlingEventFactory implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    @Inject private CargoRepository cargoRepository;
-    @Inject private VoyageRepository voyageRepository;
-    @Inject private LocationRepository locationRepository;
+
+    private static final Logger LOGGER = Logger.getLogger(HandlingEventFactory.class.getName());
+
+    private CargoRepository cargoRepository;
+
+    private VoyageRepository voyageRepository;
+
+    private LocationRepository locationRepository;
+
+    // no-args constructor required by CDI
+    public HandlingEventFactory() {}
+
+    @Inject
+    public HandlingEventFactory(
+            CargoRepository cargoRepository,
+            VoyageRepository voyageRepository,
+            LocationRepository locationRepository) {
+        this.cargoRepository = cargoRepository;
+        this.voyageRepository = voyageRepository;
+        this.locationRepository = locationRepository;
+    }
 
     /**
      * @param registrationTime time when this event was received by the system

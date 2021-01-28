@@ -5,61 +5,82 @@ import org.eclipse.cargotracker.domain.model.cargo.Cargo;
 import org.eclipse.cargotracker.domain.model.cargo.RouteSpecification;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
+import org.eclipse.cargotracker.domain.model.handling.HandlingEventFactory;
+import org.eclipse.cargotracker.domain.model.handling.HandlingEventRepository;
 import org.eclipse.cargotracker.domain.model.location.SampleLocations;
+import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
+import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 public class HandlingEventServiceTest {
 
-    private DefaultHandlingEventService service;
-    //	private ApplicationEvents applicationEvents;
-    //	private CargoRepository cargoRepository;
-    //	private VoyageRepository voyageRepository;
-    //	private HandlingEventRepository handlingEventRepository;
-    //	private LocationRepository locationRepository;
-    private Cargo cargo =
+    private final ApplicationEvents applicationEvents = mock(ApplicationEvents.class);
+    private final HandlingEventRepository handlingEventRepository =
+            mock(HandlingEventRepository.class);
+    private final HandlingEventFactory handlingEventFactory = mock(HandlingEventFactory.class);
+    private final Cargo cargo =
             new Cargo(
                     new TrackingId("ABC"),
                     new RouteSpecification(
                             SampleLocations.HAMBURG, SampleLocations.TOKYO, LocalDate.now()));
+    private DefaultHandlingEventService service;
 
-    protected void setUp() throws Exception {
-        //        cargoRepository = createMock(CargoRepository.class);
-        //        voyageRepository = createMock(VoyageRepository.class);
-        //        handlingEventRepository = createMock(HandlingEventRepository.class);
-        //        locationRepository = createMock(LocationRepository.class);
-        //        applicationEvents = createMock(ApplicationEvents.class);
-        //        HandlingEventFactory handlingEventFactory = new HandlingEventFactory(
-        //                cargoRepository, voyageRepository, locationRepository);
-        //        service = new DefaultHandlingEventService(handlingEventRepository,
-        // applicationEvents,
-        // handlingEventFactory);
+    @Before
+    public void setUp() {
+        service =
+                new DefaultHandlingEventService(
+                        applicationEvents, handlingEventRepository, handlingEventFactory);
     }
 
-    protected void tearDown() throws Exception {
-        //        verify(cargoRepository, voyageRepository, handlingEventRepository,
-        // applicationEvents);
-    }
-
+    @Test
     public void testRegisterEvent() throws Exception {
-        //        expect(cargoRepository.find(cargo.getTrackingId())).andReturn(cargo);
-        //        expect(voyageRepository.find(SampleVoyages.CM001.getVoyageNumber()))
-        //                .andReturn(SampleVoyages.CM001);
-        //        expect(locationRepository.find(SampleLocations.STOCKHOLM.getUnLocode()))
-        //                .andReturn(SampleLocations.STOCKHOLM);
-        //        handlingEventRepository.store(isA(HandlingEvent.class));
-        //        applicationEvents.cargoWasHandled(isA(HandlingEvent.class));
+        // assume
+        when(handlingEventFactory.createHandlingEvent(
+                        any(LocalDateTime.class),
+                        any(LocalDateTime.class),
+                        any(TrackingId.class),
+                        any(VoyageNumber.class),
+                        any(UnLocode.class),
+                        any(HandlingEvent.Type.class)))
+                .thenReturn(
+                        new HandlingEvent(
+                                cargo,
+                                LocalDateTime.now(),
+                                LocalDateTime.now(),
+                                HandlingEvent.Type.LOAD,
+                                SampleLocations.STOCKHOLM,
+                                SampleVoyages.CM001));
+        doNothing().when(handlingEventRepository).store(any(HandlingEvent.class));
+        doNothing().when(applicationEvents).cargoWasHandled(any(HandlingEvent.class));
 
-        //        replay(cargoRepository, voyageRepository, handlingEventRepository,
-        //                locationRepository, applicationEvents);
-
+        // call registerHandlingEvent
         service.registerHandlingEvent(
                 LocalDateTime.now(),
                 cargo.getTrackingId(),
                 SampleVoyages.CM001.getVoyageNumber(),
                 SampleLocations.STOCKHOLM.getUnLocode(),
                 HandlingEvent.Type.LOAD);
+
+        // verify
+        verify(handlingEventFactory, times(1))
+                .createHandlingEvent(
+                        any(LocalDateTime.class),
+                        any(LocalDateTime.class),
+                        any(TrackingId.class),
+                        any(VoyageNumber.class),
+                        any(UnLocode.class),
+                        any(HandlingEvent.Type.class));
+        verify(handlingEventRepository, times(1)).store(any(HandlingEvent.class));
+        verify(applicationEvents, times(1)).cargoWasHandled(any(HandlingEvent.class));
+
+        verifyNoMoreInteractions(handlingEventFactory, handlingEventRepository, applicationEvents);
     }
 }

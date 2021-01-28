@@ -15,6 +15,8 @@ import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.logging.Logger;
 
+// WildFly issue:
+// EJB can not be a inner class.
 /** Loads sample data for demo. */
 @Singleton
 @Startup
@@ -47,6 +49,8 @@ public class BookingServiceTestDataGenerator {
                     cargo.getDelivery().setLastEvent(null);
                     entityManager.merge(cargo);
                 });
+
+        entityManager.flush();
 
         // Delete all entities
         // TODO [Clean Code] See why cascade delete is not working.

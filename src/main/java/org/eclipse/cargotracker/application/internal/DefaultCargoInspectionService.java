@@ -19,20 +19,39 @@ import java.util.logging.Logger;
 @Stateless
 public class DefaultCargoInspectionService implements CargoInspectionService {
 
+    private static final Logger LOGGER =
+            Logger.getLogger(DefaultCargoInspectionService.class.getName());
+
     @Inject private ApplicationEvents applicationEvents;
+
     @Inject private CargoRepository cargoRepository;
+
     @Inject private HandlingEventRepository handlingEventRepository;
 
     @Inject @CargoInspected private Event<Cargo> cargoInspected;
 
-    @Inject private Logger logger;
+    // no-args constructor required by CDI
+    public DefaultCargoInspectionService() {}
+
+    // @Inject
+    public DefaultCargoInspectionService(
+            ApplicationEvents applicationEvents,
+            CargoRepository cargoRepository,
+            HandlingEventRepository handlingEventRepository,
+            // @CargoInspected
+            Event<Cargo> cargoInspected) {
+        this.applicationEvents = applicationEvents;
+        this.cargoRepository = cargoRepository;
+        this.handlingEventRepository = handlingEventRepository;
+        this.cargoInspected = cargoInspected;
+    }
 
     @Override
     public void inspectCargo(TrackingId trackingId) {
         Cargo cargo = cargoRepository.find(trackingId);
 
         if (cargo == null) {
-            logger.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
+            LOGGER.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
             return;
         }
 

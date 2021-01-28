@@ -51,6 +51,12 @@ public class JpaCargoRepository implements CargoRepository, Serializable {
         }
 
         entityManager.persist(cargo);
+
+        // Hibernate issue:
+        // Delete-orphan does not seem to work correctly when the parent is a component
+        this.entityManager
+                .createNativeQuery("delete from Leg where cargo_id = null")
+                .executeUpdate();
     }
 
     @Override

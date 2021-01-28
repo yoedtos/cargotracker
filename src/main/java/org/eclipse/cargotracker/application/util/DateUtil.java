@@ -2,6 +2,8 @@ package org.eclipse.cargotracker.application.util;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /** A few utils for working with Date. */
@@ -11,6 +13,8 @@ public class DateUtil {
     public static final String DT_PATTERN = "yyyy-MM-dd HH:mm";
 
     public static final String DT_FORMAT = "MM/dd/yyyy hh:mm a z";
+    // can not extract zone id from a `LocalDateTime`
+    // public static final String DT_FORMAT = "MM/dd/yyyy hh:mm";
 
     private DateUtil() {}
 
@@ -27,7 +31,8 @@ public class DateUtil {
     }
 
     public static String toString(LocalDateTime dt) {
-        return dt.format(DateTimeFormatter.ofPattern(DT_FORMAT));
+        return DateTimeFormatter.ofPattern(DT_FORMAT)
+                .format(ZonedDateTime.of(dt, ZoneId.systemDefault()));
     }
 
     public static String getDateFromDateTime(String dateTime) {

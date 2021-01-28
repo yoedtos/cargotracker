@@ -8,6 +8,7 @@ import org.eclipse.cargotracker.domain.shared.DomainObjectUtils;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 /**
  * A Cargo. This is the central class in the domain model, and it is the root of the
@@ -52,6 +53,8 @@ import java.io.Serializable;
 public class Cargo implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private static final Logger LOGGER = Logger.getLogger(Cargo.class.getName());
 
     @Id @GeneratedValue private Long id;
     @Embedded private TrackingId trackingId;
@@ -124,6 +127,8 @@ public class Cargo implements Serializable {
         Validate.notNull(itinerary, "Itinerary is required for assignment");
 
         this.itinerary = itinerary;
+
+        // LOGGER.log(Level.INFO, "cargo.assignToRoute itinerary: {0}", this.itinerary);
         // Handling consistency within the Cargo aggregate synchronously
         this.delivery = delivery.updateOnRouting(this.routeSpecification, this.itinerary);
     }
@@ -145,6 +150,7 @@ public class Cargo implements Serializable {
     public void deriveDeliveryProgress(HandlingHistory handlingHistory) {
         this.delivery =
                 Delivery.derivedFrom(getRouteSpecification(), getItinerary(), handlingHistory);
+        // LOGGER.log(Level.INFO, "deriveDeliveryProgress: {0}", this.delivery);
     }
 
     /**
@@ -178,5 +184,9 @@ public class Cargo implements Serializable {
     @Override
     public String toString() {
         return trackingId.toString();
+    }
+
+    public boolean isNew() {
+        return this.id == null;
     }
 }

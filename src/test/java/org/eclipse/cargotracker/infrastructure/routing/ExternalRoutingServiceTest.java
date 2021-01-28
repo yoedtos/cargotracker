@@ -2,41 +2,45 @@ package org.eclipse.cargotracker.infrastructure.routing;
 
 import org.eclipse.cargotracker.domain.model.cargo.*;
 import org.eclipse.cargotracker.domain.model.location.Location;
+import org.eclipse.cargotracker.domain.model.location.LocationRepository;
 import org.eclipse.cargotracker.domain.model.location.SampleLocations;
-import org.junit.Assert;
+import org.eclipse.cargotracker.domain.model.location.UnLocode;
+import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
+import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
+import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
+import org.eclipse.cargotracker.infrastructure.routing.client.GraphTraversalResourceClient;
+import org.eclipse.pathfinder.api.TransitEdge;
+import org.eclipse.pathfinder.api.TransitPath;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class ExternalRoutingServiceTest {
 
+    private final VoyageRepository voyageRepository = mock(VoyageRepository.class);
+    private final LocationRepository locationRepository = mock(LocationRepository.class);
+    private final GraphTraversalResourceClient graphTraversalResourceClient =
+            mock(GraphTraversalResourceClient.class);
     private ExternalRoutingService externalRoutingService;
-    //    private VoyageRepository voyageRepository;
 
-    //    protected void setUp() throws Exception {
-    //        externalRoutingService = new ExternalRoutingService();
-    //        LocationRepository locationRepository = new LocationRepositoryInMem();
-    //        externalRoutingService.setLocationRepository(locationRepository);
-    //
-    //        voyageRepository = createMock(VoyageRepository.class);
-    //        externalRoutingService.setVoyageRepository(voyageRepository);
-    //
-    //        GraphTraversalService graphTraversalService = new GraphTraversalServiceImpl(new
-    // GraphDAO() {
-    //            public List<String> listLocations() {
-    //                return Arrays.asList(SampleLocations.TOKYO.getUnLocode().getIdString(),
-    // SampleLocations.STOCKHOLM.getUnLocode().getIdString(),
-    // SampleLocations.GOTHENBURG.getUnLocode().getIdString());
-    //            }
-    //
-    //            public void storeCarrierMovementId(String cmId, String from, String to) {
-    //            }
-    //        });
-    //        externalRoutingService.setGraphTraversalService(graphTraversalService);
-    //    }
-    // TODO [TDD] this test belongs in com.pathfinder
+    @Before
+    public void setUp() {
+        this.externalRoutingService =
+                new ExternalRoutingService(
+                        locationRepository, voyageRepository, graphTraversalResourceClient);
+    }
+
+    @Test
     public void testCalculatePossibleRoutes() {
         TrackingId trackingId = new TrackingId("ABC");
         RouteSpecification routeSpecification =
@@ -44,10 +48,38 @@ public class ExternalRoutingServiceTest {
                         SampleLocations.HONGKONG, SampleLocations.HELSINKI, LocalDate.now());
         Cargo cargo = new Cargo(trackingId, routeSpecification);
 
-        //
-        // expect(voyageRepository.find(isA(VoyageNumber.class))).andStubReturn(SampleVoyages.CM002);
-        //
-        //        replay(voyageRepository);
+        when(voyageRepository.find(any(VoyageNumber.class))).thenReturn(SampleVoyages.CM002);
+        when(locationRepository.find(SampleLocations.HONGKONG.getUnLocode()))
+                .thenReturn(SampleLocations.HONGKONG);
+        when(locationRepository.find(SampleLocations.CHICAGO.getUnLocode()))
+                .thenReturn(SampleLocations.CHICAGO);
+        when(locationRepository.find(SampleLocations.HELSINKI.getUnLocode()))
+                .thenReturn(SampleLocations.HELSINKI);
+        when(graphTraversalResourceClient.findShortestPath(anyString(), anyString()))
+                .thenReturn(
+                        List.of(
+                                new TransitPath(
+                                        List.of(
+                                                new TransitEdge(
+                                                        "CM002",
+                                                        SampleLocations.HONGKONG
+                                                                .getUnLocode()
+                                                                .getIdString(),
+                                                        SampleLocations.CHICAGO
+                                                                .getUnLocode()
+                                                                .getIdString(),
+                                                        LocalDateTime.now().plusDays(1),
+                                                        LocalDateTime.now().plusDays(10)),
+                                                new TransitEdge(
+                                                        "CM002",
+                                                        SampleLocations.CHICAGO
+                                                                .getUnLocode()
+                                                                .getIdString(),
+                                                        SampleLocations.HELSINKI
+                                                                .getUnLocode()
+                                                                .getIdString(),
+                                                        LocalDateTime.now().plusDays(11),
+                                                        LocalDateTime.now().plusDays(30))))));
 
         List<Itinerary> candidates =
                 externalRoutingService.fetchRoutesForSpecification(routeSpecification);
@@ -55,11 +87,11 @@ public class ExternalRoutingServiceTest {
 
         for (Itinerary itinerary : candidates) {
             List<Leg> legs = itinerary.getLegs();
-            assertNotNull(legs);
-            assertFalse(legs.isEmpty());
+            assertThat(legs).isNotNull();
+            assertThat(legs).isNotEmpty();
 
             // Cargo origin and start of first leg should match
-            Assert.assertEquals(cargo.getOrigin(), legs.get(0).getLoadLocation());
+            assertEquals(cargo.getOrigin(), legs.get(0).getLoadLocation());
 
             // Cargo final destination and last leg stop should match
             Location lastLegStop = legs.get(legs.size() - 1).getUnloadLocation();
@@ -71,6 +103,11 @@ public class ExternalRoutingServiceTest {
             }
         }
 
-        //        verify(voyageRepository);
+        verify(graphTraversalResourceClient, times(1)).findShortestPath(anyString(), anyString());
+        verify(voyageRepository, atLeastOnce()).find(any(VoyageNumber.class));
+        verify(locationRepository, atLeastOnce()).find(any(UnLocode.class));
+
+        verifyNoMoreInteractions(
+                voyageRepository, locationRepository, graphTraversalResourceClient);
     }
 }

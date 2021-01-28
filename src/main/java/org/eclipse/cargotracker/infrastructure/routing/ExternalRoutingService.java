@@ -8,18 +8,12 @@ import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 import org.eclipse.cargotracker.domain.service.RoutingService;
+import org.eclipse.cargotracker.infrastructure.routing.client.GraphTraversalResourceClient;
 import org.eclipse.pathfinder.api.TransitEdge;
 import org.eclipse.pathfinder.api.TransitPath;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -34,23 +28,30 @@ import java.util.stream.Collectors;
 @Stateless
 public class ExternalRoutingService implements RoutingService {
 
-    private final Client jaxrsClient = ClientBuilder.newClient();
-    @Inject private Logger logger;
+    private static final Logger LOGGER = Logger.getLogger(ExternalRoutingService.class.getName());
 
-    @Resource(lookup = "java:app/configuration/GraphTraversalUrl")
-    private String graphTraversalUrl;
+    private final LocationRepository locationRepository;
 
-    private WebTarget graphTraversalResource;
+    private final VoyageRepository voyageRepository;
 
-    @Inject private LocationRepository locationRepository;
-    @Inject private VoyageRepository voyageRepository;
+    private final GraphTraversalResourceClient graphTraversalResource;
 
-    @PostConstruct
-    public void init() {
-        graphTraversalResource = jaxrsClient.target(graphTraversalUrl);
-        // graphTraversalResource.register(new MoxyJsonFeature()).register(new
-        // JsonMoxyConfigurationContextResolver());
+    @Inject
+    public ExternalRoutingService(
+            LocationRepository locationRepository,
+            VoyageRepository voyageRepository,
+            GraphTraversalResourceClient graphTraversalResource) {
+        this.locationRepository = locationRepository;
+        this.voyageRepository = voyageRepository;
+        this.graphTraversalResource = graphTraversalResource;
     }
+
+    //    @PostConstruct
+    //    public void init() {
+    //        // this.graphTraversalResource = new GraphTraversalResourceClient();
+    //        //graphTraversalResource.register(new MoxyJsonFeature()).register(new
+    // JsonMoxyConfigurationContextResolver());
+    //    }
 
     @Override
     public List<Itinerary> fetchRoutesForSpecification(RouteSpecification routeSpecification) {
@@ -59,11 +60,7 @@ public class ExternalRoutingService implements RoutingService {
         String destination = routeSpecification.getDestination().getUnLocode().getIdString();
 
         List<TransitPath> transitPaths =
-                graphTraversalResource
-                        .queryParam("origin", origin)
-                        .queryParam("destination", destination)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get(new GenericType<>() {});
+                this.graphTraversalResource.findShortestPath(origin, destination);
 
         // The returned result is then translated back into our domain model.
         List<Itinerary> itineraries = new ArrayList<>();
@@ -76,10 +73,10 @@ public class ExternalRoutingService implements RoutingService {
                             if (routeSpecification.isSatisfiedBy(itinerary)) {
                                 itineraries.add(itinerary);
                             } else {
-                                logger.log(
+                                LOGGER.log(
                                         Level.FINE,
-                                        "Received itinerary that did not satisfy the route"
-                                                + " specification");
+                                        "Received itinerary that did not satisfy the route specification: {0}",
+                                        itinerary);
                             }
                         });
 

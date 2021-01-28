@@ -22,6 +22,8 @@ public class RouteSpecification extends AbstractSpecification<Itinerary> impleme
 
     private static final long serialVersionUID = 1L;
 
+    // private static final Logger LOGGER = Logger.getLogger(RouteSpecification.class.getName());
+
     @ManyToOne
     @JoinColumn(name = "spec_origin_id", updatable = false)
     private Location origin;
@@ -105,5 +107,17 @@ public class RouteSpecification extends AbstractSpecification<Itinerary> impleme
                 .append(this.destination)
                 .append(this.arrivalDeadline)
                 .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "RouteSpecification{"
+                + "origin="
+                + origin
+                + ", destination="
+                + destination
+                + ", arrivalDeadline="
+                + arrivalDeadline
+                + '}';
     }
 }

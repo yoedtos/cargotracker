@@ -17,6 +17,7 @@ import java.io.Serializable;
 @Embeddable
 public class HandlingActivity implements Serializable {
 
+    public static final HandlingActivity EMPTY = new HandlingActivity();
     private static final long serialVersionUID = 1L;
 
     @Enumerated(EnumType.STRING)
@@ -108,5 +109,17 @@ public class HandlingActivity implements Serializable {
         }
 
         return voyage == null;
+    }
+
+    @Override
+    public String toString() {
+        return "HandlingActivity{"
+                + "type="
+                + type
+                + ", location="
+                + location
+                + ", voyage="
+                + voyage
+                + '}';
     }
 }

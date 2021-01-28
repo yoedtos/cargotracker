@@ -14,6 +14,7 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import static org.eclipse.cargotracker.domain.model.cargo.RoutingStatus.*;
 import static org.eclipse.cargotracker.domain.model.cargo.TransportStatus.*;
@@ -24,13 +25,13 @@ import static org.eclipse.cargotracker.domain.model.cargo.TransportStatus.*;
  */
 @Embeddable
 public class Delivery implements Serializable {
-
     // Null object pattern.
     public static final LocalDateTime ETA_UNKOWN = null;
     // Null object pattern
-    public static final HandlingActivity NO_ACTIVITY = new HandlingActivity();
+    public static final HandlingActivity NO_ACTIVITY = HandlingActivity.EMPTY;
+    private static final Logger LOGGER = Logger.getLogger(Delivery.class.getName());
     private static final long serialVersionUID = 1L;
-
+    // public static final HandlingActivity NO_ACTIVITY = null;
     @Enumerated(EnumType.STRING)
     @Column(name = "transport_status")
     @NotNull
@@ -49,7 +50,7 @@ public class Delivery implements Serializable {
     // @Temporal(TemporalType.DATE)
     private LocalDateTime eta;
 
-    @Embedded private HandlingActivity nextExpectedActivity;
+    @Embedded private HandlingActivity nextExpectedActivity = null;
 
     @Column(name = "unloaded_at_dest")
     @NotNull
@@ -86,6 +87,7 @@ public class Delivery implements Serializable {
         this.eta = calculateEta(itinerary);
         this.nextExpectedActivity = calculateNextExpectedActivity(routeSpecification, itinerary);
         this.isUnloadedAtDestination = calculateUnloadedAtDestination(routeSpecification);
+        // LOGGER.log(Level.INFO, "on track: {0}",  this.onTrack());
     }
 
     /**
@@ -169,8 +171,12 @@ public class Delivery implements Serializable {
         return eta != ETA_UNKOWN ? eta : ETA_UNKOWN;
     }
 
+    // Hibernate issue:
+    // After an empty HandlingActivity is persisted, when retrieving it from database it is a
+    // *NULL*.
     public HandlingActivity getNextExpectedActivity() {
-        return nextExpectedActivity;
+        // return nextExpectedActivity;
+        return DomainObjectUtils.nullSafe(nextExpectedActivity, NO_ACTIVITY);
     }
 
     /** @return True if the cargo has been unloaded at the final destination. */
@@ -349,7 +355,7 @@ public class Delivery implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof Delivery)) {
             return false;
         }
 
@@ -372,5 +378,31 @@ public class Delivery implements Serializable {
                 .append(calculatedAt)
                 .append(lastEvent)
                 .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Delivery{"
+                + "transportStatus="
+                + transportStatus
+                + ", lastKnownLocation="
+                + lastKnownLocation
+                + ", currentVoyage="
+                + currentVoyage
+                + ", misdirected="
+                + misdirected
+                + ", eta="
+                + eta
+                + ", nextExpectedActivity="
+                + nextExpectedActivity
+                + ", isUnloadedAtDestination="
+                + isUnloadedAtDestination
+                + ", routingStatus="
+                + routingStatus
+                + ", calculatedAt="
+                + calculatedAt
+                + ", lastEvent="
+                + lastEvent
+                + '}';
     }
 }

@@ -10,10 +10,13 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Entity
 public class Leg implements Serializable {
-
+    private static final Logger LOGGER = Logger.getLogger(Leg.class.getName());
     private static final long serialVersionUID = 1L;
 
     @Id @GeneratedValue private Long id;
@@ -59,8 +62,14 @@ public class Leg implements Serializable {
         this.voyage = voyage;
         this.loadLocation = loadLocation;
         this.unloadLocation = unloadLocation;
-        this.loadTime = loadTime;
-        this.unloadTime = unloadTime;
+
+        // Hibernate issue:
+        // when the `LocalDateTime` field is persisted into db, and retrieved from db, the values
+        // are
+        // different in nanoseconds.
+        // any good idea to overcome this?
+        this.loadTime = loadTime.truncatedTo(ChronoUnit.SECONDS);
+        this.unloadTime = unloadTime.truncatedTo(ChronoUnit.SECONDS);
     }
 
     public Voyage getVoyage() {
@@ -84,11 +93,20 @@ public class Leg implements Serializable {
     }
 
     private boolean sameValueAs(Leg other) {
+        LOGGER.log(
+                Level.INFO,
+                "this.loadTime == other.loadTime:{0}",
+                this.loadTime.equals(other.loadTime));
+        LOGGER.log(
+                Level.INFO,
+                "this.unloadTime == other.unloadTime:{0}",
+                this.unloadTime.equals(other.unloadTime));
         return other != null
                 && new EqualsBuilder()
                         .append(this.voyage, other.voyage)
                         .append(this.loadLocation, other.loadLocation)
                         .append(this.unloadLocation, other.unloadLocation)
+                        // use truncatedTo to remove nanoseconds fields in timestamp.
                         .append(this.loadTime, other.loadTime)
                         .append(this.unloadTime, other.unloadTime)
                         .isEquals();
@@ -99,7 +117,7 @@ public class Leg implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof Leg)) {
             return false;
         }
 
@@ -111,11 +129,11 @@ public class Leg implements Serializable {
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-                .append(voyage)
-                .append(loadLocation)
-                .append(unloadLocation)
-                .append(loadTime)
-                .append(unloadTime)
+                .append(this.voyage)
+                .append(this.loadLocation)
+                .append(this.unloadLocation)
+                .append(this.loadTime)
+                .append(this.unloadTime)
                 .toHashCode();
     }
 
@@ -135,5 +153,9 @@ public class Leg implements Serializable {
                 + ", unloadTime="
                 + unloadTime
                 + '}';
+    }
+
+    public boolean isNew() {
+        return this.id == null;
     }
 }

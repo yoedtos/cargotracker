@@ -2,24 +2,15 @@ package org.eclipse.cargotracker.application;
 
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.internal.DefaultBookingService;
-import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.*;
-import org.eclipse.cargotracker.domain.model.handling.*;
+import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.location.Location;
-import org.eclipse.cargotracker.domain.model.location.LocationRepository;
 import org.eclipse.cargotracker.domain.model.location.SampleLocations;
 import org.eclipse.cargotracker.domain.model.location.UnLocode;
-import org.eclipse.cargotracker.domain.model.voyage.*;
-import org.eclipse.cargotracker.domain.service.RoutingService;
-import org.eclipse.cargotracker.domain.shared.*;
-import org.eclipse.cargotracker.infrastructure.logging.LoggerProducer;
-import org.eclipse.cargotracker.infrastructure.messaging.JMSResourcesSetup;
-import org.eclipse.cargotracker.infrastructure.persistence.DatabaseSetup;
-import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaCargoRepository;
-import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaHandlingEventRepository;
-import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaLocationRepository;
-import org.eclipse.cargotracker.infrastructure.persistence.jpa.JpaVoyageRepository;
+import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
+import org.eclipse.cargotracker.domain.model.voyage.Voyage;
 import org.eclipse.cargotracker.infrastructure.routing.ExternalRoutingService;
+import org.eclipse.cargotracker.infrastructure.routing.client.GraphTraversalResourceClient;
 import org.eclipse.pathfinder.api.GraphTraversalService;
 import org.eclipse.pathfinder.api.TransitEdge;
 import org.eclipse.pathfinder.api.TransitPath;
@@ -29,8 +20,8 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.junit.InSequence;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,13 +29,17 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.io.File;
+import javax.transaction.UserTransaction;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.cargotracker.Deployments.*;
 import static org.junit.Assert.*;
 
 /**
@@ -64,102 +59,83 @@ public class BookingServiceTest {
     private static List<Itinerary> candidates;
     private static LocalDate deadline;
     private static Itinerary assigned;
+    @Inject UserTransaction utx;
     @Inject private BookingService bookingService;
     @PersistenceContext private EntityManager entityManager;
 
     @Deployment
     public static WebArchive createDeployment() {
-        File[] extraJars =
-                Maven.resolver()
-                        .loadPomFromFile("pom.xml")
-                        .resolve(
-                                List.of(
-                                        "org.apache.commons:commons-lang3",
-                                        "org.postgresql:postgresql"))
-                        .withTransitivity()
-                        .asFile();
 
-        LOGGER.log(Level.INFO, "Adding extra jars: {0}", new Object[] {extraJars});
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "cargo-tracker-test.war");
 
-        WebArchive war =
-                ShrinkWrap.create(WebArchive.class, "cargo-tracker-test.war")
-                        // Application layer component directly under test.
-                        .addClass(BookingService.class)
-                        // Domain layer components.
-                        .addClass(TrackingId.class)
-                        .addClass(UnLocode.class)
-                        .addClass(Itinerary.class)
-                        .addClass(Leg.class)
-                        .addClass(Voyage.class)
-                        .addClass(VoyageNumber.class)
-                        .addClass(Schedule.class)
-                        .addClass(CarrierMovement.class)
-                        .addClass(Location.class)
-                        .addClass(HandlingEvent.class)
-                        .addClass(Cargo.class)
-                        .addClass(RouteSpecification.class)
-                        .addClass(AbstractSpecification.class)
-                        .addClass(Specification.class)
-                        .addClass(AndSpecification.class)
-                        .addClass(OrSpecification.class)
-                        .addClass(NotSpecification.class)
-                        .addClass(Delivery.class)
-                        .addClass(TransportStatus.class)
-                        .addClass(HandlingActivity.class)
-                        .addClass(RoutingStatus.class)
-                        .addClass(HandlingHistory.class)
-                        .addClass(DomainObjectUtils.class)
-                        .addClass(CargoRepository.class)
-                        .addClass(LocationRepository.class)
-                        .addClass(VoyageRepository.class)
-                        .addClass(HandlingEventRepository.class)
-                        .addClass(HandlingEventFactory.class)
-                        .addClass(CannotCreateHandlingEventException.class)
-                        .addClass(UnknownCargoException.class)
-                        .addClass(UnknownVoyageException.class)
-                        .addClass(UnknownLocationException.class)
-                        .addClass(RoutingService.class)
-                        // Application layer components
-                        .addClass(DefaultBookingService.class)
-                        // Infrastructure layer components.
-                        .addClass(DatabaseSetup.class)
-                        .addClass(JMSResourcesSetup.class)
-                        .addClass(JpaCargoRepository.class)
-                        .addClass(JpaVoyageRepository.class)
-                        .addClass(JpaHandlingEventRepository.class)
-                        .addClass(JpaLocationRepository.class)
-                        .addClass(ExternalRoutingService.class)
-                        .addClass(LoggerProducer.class)
-                        // .addClass(JsonMoxyConfigurationContextResolver.class)
-                        // Interface components
-                        .addClass(TransitPath.class)
-                        .addClass(TransitEdge.class)
-                        // Third-party system simulator
-                        .addClass(GraphTraversalService.class)
-                        .addClass(GraphDao.class)
-                        // Sample data.
-                        .addClass(BookingServiceTestDataGenerator.class)
-                        .addClass(SampleLocations.class)
-                        .addClass(SampleVoyages.class)
-                        .addClass(DateUtil.class)
-                        .addClass(BookingServiceTestRestConfiguration.class)
+        addExtraJars(war);
+        addDomainModels(war);
+        addDomainRepositories(war);
+        addInfraBase(war);
+        addInfraPersistence(war);
+        addApplicationBase(war);
 
-                        // add persistence unit descriptor
-                        .addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml")
+        // add target BookingService for test
+        war.addClass(BookingService.class).addClass(DefaultBookingService.class);
 
-                        // add web xml
-                        .addAsWebInfResource("test-web.xml", "web.xml")
+        addDomainService(war);
+        war.addClass(ExternalRoutingService.class)
+                .addClass(GraphTraversalResourceClient.class)
 
-                        // add extra jars.
-                        .addAsLibraries(extraJars);
+                // .addClass(JsonMoxyConfigurationContextResolver.class)
+                // Interface components
+                .addClass(TransitPath.class)
+                .addClass(TransitEdge.class)
+                // Third-party system simulator
+                .addClass(GraphTraversalService.class)
+                .addClass(GraphDao.class)
+                // Sample data.
+                .addClass(BookingServiceTestDataGenerator.class)
+                .addClass(SampleLocations.class)
+                .addClass(SampleVoyages.class)
+                .addClass(TestRestConfiguration.class)
+
+                // add persistence unit descriptor
+                .addAsResource("META-INF/persistence.xml", "META-INF/persistence.xml")
+
+                // add web xml
+                .addAsWebInfResource("test-web.xml", "web.xml")
+
+                // add Wildfly specific deployment descriptor
+                .addAsWebInfResource(
+                        "test-jboss-deployment-structure.xml", "jboss-deployment-structure.xml");
 
         LOGGER.log(Level.INFO, "War deployment: {0}", war.toString(true));
 
         return war;
     }
 
+    // Wildfly/Hibernate issue:
+    // use a UserTransaction to wrap the tests and avoid the Hibernate lazy initialization exception
+    // in test.
+    @Before
+    public void setUp() throws Exception {
+        startTransaction();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        commitTransaction();
+    }
+
+    public void startTransaction() throws Exception {
+        utx.begin();
+        entityManager.joinTransaction();
+    }
+
+    public void commitTransaction() throws Exception {
+        utx.commit();
+    }
+
     @Test
     @InSequence(1)
+    // The `Transactional` annotation does not work in Arquillian test.
+    // @Transactional
     public void testRegisterNew() {
         UnLocode fromUnlocode = new UnLocode("USCHI");
         UnLocode toUnlocode = new UnLocode("SESTO");
@@ -190,6 +166,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(2)
+    // @Transactional
     public void testRouteCandidates() {
         candidates = bookingService.requestPossibleRoutesForCargo(trackingId);
 
@@ -198,6 +175,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(3)
+    // @Transactional
     public void testAssignRoute() {
         assigned = candidates.get(new Random().nextInt(candidates.size()));
 
@@ -209,26 +187,31 @@ public class BookingServiceTest {
                         .setParameter("trackingId", trackingId)
                         .getSingleResult();
 
-        assertEquals(assigned, cargo.getItinerary());
-        assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
+        assertThat(cargo.getItinerary()).isEqualTo(assigned);
+        assertThat(cargo.getDelivery().getTransportStatus())
+                .isEqualTo(TransportStatus.NOT_RECEIVED);
         assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
         assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
-        assertFalse(cargo.getDelivery().isMisdirected());
-        assertTrue(
-                cargo.getDelivery().getEstimatedTimeOfArrival().isBefore(deadline.atStartOfDay()));
-        Assert.assertEquals(
+        assertThat(cargo.getDelivery().isMisdirected()).isFalse();
+        assertThat(
+                        cargo.getDelivery()
+                                .getEstimatedTimeOfArrival()
+                                .isBefore(deadline.atStartOfDay()))
+                .isTrue();
+        assertEquals(
                 HandlingEvent.Type.RECEIVE,
                 cargo.getDelivery().getNextExpectedActivity().getType());
-        Assert.assertEquals(
+        assertEquals(
                 SampleLocations.CHICAGO,
                 cargo.getDelivery().getNextExpectedActivity().getLocation());
-        Assert.assertEquals(null, cargo.getDelivery().getNextExpectedActivity().getVoyage());
-        assertFalse(cargo.getDelivery().isUnloadedAtDestination());
-        assertEquals(RoutingStatus.ROUTED, cargo.getDelivery().getRoutingStatus());
+        assertThat(cargo.getDelivery().getNextExpectedActivity().getVoyage()).isNull();
+        assertThat(cargo.getDelivery().isUnloadedAtDestination()).isFalse();
+        assertThat(cargo.getDelivery().getRoutingStatus()).isEqualTo(RoutingStatus.ROUTED);
     }
 
     @Test
     @InSequence(4)
+    // @Transactional
     public void testChangeDestination() {
         bookingService.changeDestination(trackingId, new UnLocode("FIHEL"));
 
@@ -241,7 +224,7 @@ public class BookingServiceTest {
         assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
         assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
         assertTrue(deadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
-        assertEquals(assigned, cargo.getItinerary());
+        assertThat(cargo.getItinerary()).isEqualTo(assigned);
         assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
         assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
         assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
@@ -254,6 +237,7 @@ public class BookingServiceTest {
 
     @Test
     @InSequence(5)
+    // @Transactional
     public void testChangeDeadline() {
         LocalDate newDeadline = deadline.plusMonths(1);
         bookingService.changeDeadline(trackingId, newDeadline);
@@ -267,7 +251,7 @@ public class BookingServiceTest {
         assertEquals(SampleLocations.CHICAGO, cargo.getOrigin());
         assertEquals(SampleLocations.HELSINKI, cargo.getRouteSpecification().getDestination());
         assertTrue(newDeadline.isEqual(cargo.getRouteSpecification().getArrivalDeadline()));
-        assertEquals(assigned, cargo.getItinerary());
+        assertThat(cargo.getItinerary()).isEqualTo(assigned);
         assertEquals(TransportStatus.NOT_RECEIVED, cargo.getDelivery().getTransportStatus());
         assertEquals(Location.UNKNOWN, cargo.getDelivery().getLastKnownLocation());
         assertEquals(Voyage.NONE, cargo.getDelivery().getCurrentVoyage());
@@ -276,5 +260,20 @@ public class BookingServiceTest {
         assertEquals(Delivery.NO_ACTIVITY, cargo.getDelivery().getNextExpectedActivity());
         assertFalse(cargo.getDelivery().isUnloadedAtDestination());
         assertEquals(RoutingStatus.MISROUTED, cargo.getDelivery().getRoutingStatus());
+    }
+
+    /** JAX-RS configuration. */
+    @ApplicationPath("rest")
+    public static class TestRestConfiguration extends Application {
+
+        //    public BookingServiceTestRestConfiguration() {
+        //        // Resources
+        //        packages(new String[]{GraphTraversalService.class.getPackage().getName()});
+        //        // Providers - JSON.
+        //        register(new MoxyJsonFeature());
+        //        register(new JsonMoxyConfigurationContextResolver()); // TODO [Jakarta EE 8] See
+        // if
+        // this can be removed.
+        //    }
     }
 }
