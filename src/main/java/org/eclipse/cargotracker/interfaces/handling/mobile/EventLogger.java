@@ -161,7 +161,7 @@ public class EventLogger implements Serializable {
                     new FacesMessage(
                             FacesMessage.SEVERITY_ERROR,
                             "When a cargo is LOADed or UNLOADed a Voyage should be selected,"
-                                + " please fix errors to continue.",
+                                    + " please fix errors to continue.",
                             "");
             FacesContext.getCurrentInstance().addMessage(null, message);
             return false;
