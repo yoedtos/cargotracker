@@ -1,10 +1,11 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
+import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
 
 /**
  * Handles viewing cargo details. Operates against a dedicated service facade, and could easily be
@@ -20,23 +21,23 @@ import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
 @RequestScoped
 public class CargoDetails {
 
-  private String trackingId;
-  private CargoRoute cargo;
-  @Inject private BookingServiceFacade bookingServiceFacade;
+    private String trackingId;
+    private CargoRoute cargo;
+    @Inject private BookingServiceFacade bookingServiceFacade;
 
-  public String getTrackingId() {
-    return trackingId;
-  }
+    public String getTrackingId() {
+        return trackingId;
+    }
 
-  public void setTrackingId(String trackingId) {
-    this.trackingId = trackingId;
-  }
+    public void setTrackingId(String trackingId) {
+        this.trackingId = trackingId;
+    }
 
-  public CargoRoute getCargo() {
-    return cargo;
-  }
+    public CargoRoute getCargo() {
+        return cargo;
+    }
 
-  public void load() {
-    cargo = bookingServiceFacade.loadCargoForRouting(trackingId);
-  }
+    public void load() {
+        cargo = bookingServiceFacade.loadCargoForRouting(trackingId);
+    }
 }

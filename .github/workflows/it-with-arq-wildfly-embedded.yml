@@ -27,7 +27,7 @@ jobs:
         run: |
           docker-compose up -d postgres
           docker ps -a
-          
+
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:

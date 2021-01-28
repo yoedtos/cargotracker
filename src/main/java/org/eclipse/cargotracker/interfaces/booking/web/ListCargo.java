@@ -1,13 +1,14 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
+
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles listing cargo. Operates against a dedicated service facade, and could easily be rewritten
@@ -23,62 +24,62 @@ import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
 @RequestScoped
 public class ListCargo {
 
-  private List<CargoRoute> cargos;
-  private List<CargoRoute> routedCargos;
-  private List<CargoRoute> claimedCargos;
-  private List<CargoRoute> routedUnclaimedCargos;
+    private List<CargoRoute> cargos;
+    private List<CargoRoute> routedCargos;
+    private List<CargoRoute> claimedCargos;
+    private List<CargoRoute> routedUnclaimedCargos;
 
-  @Inject private BookingServiceFacade bookingServiceFacade;
+    @Inject private BookingServiceFacade bookingServiceFacade;
 
-  public List<CargoRoute> getCargos() {
-    return cargos;
-  }
-
-  @PostConstruct
-  public void init() {
-    cargos = bookingServiceFacade.listAllCargos();
-  }
-
-  public List<CargoRoute> getRoutedCargos() {
-    routedCargos = new ArrayList<>();
-
-    for (CargoRoute route : cargos) {
-      if (route.isRouted()) {
-        routedCargos.add(route);
-      }
+    public List<CargoRoute> getCargos() {
+        return cargos;
     }
 
-    return routedCargos;
-  }
-
-  public List<CargoRoute> getRoutedUnclaimedCargos() {
-    routedUnclaimedCargos = new ArrayList<>();
-    for (CargoRoute route : cargos) {
-      if (route.isRouted() && !route.isClaimed()) {
-        routedUnclaimedCargos.add(route);
-      }
+    @PostConstruct
+    public void init() {
+        cargos = bookingServiceFacade.listAllCargos();
     }
 
-    return routedUnclaimedCargos;
-  }
+    public List<CargoRoute> getRoutedCargos() {
+        routedCargos = new ArrayList<>();
 
-  public List<CargoRoute> getClaimedCargos() {
-    claimedCargos = new ArrayList<>();
+        for (CargoRoute route : cargos) {
+            if (route.isRouted()) {
+                routedCargos.add(route);
+            }
+        }
 
-    for (CargoRoute route : cargos) {
-      if (route.isClaimed()) {
-        claimedCargos.add(route);
-      }
+        return routedCargos;
     }
 
-    return claimedCargos;
-  }
+    public List<CargoRoute> getRoutedUnclaimedCargos() {
+        routedUnclaimedCargos = new ArrayList<>();
+        for (CargoRoute route : cargos) {
+            if (route.isRouted() && !route.isClaimed()) {
+                routedUnclaimedCargos.add(route);
+            }
+        }
 
-  public List<CargoRoute> getNotRoutedCargos() {
-    List<CargoRoute> notRoutedCargos = new ArrayList<>();
+        return routedUnclaimedCargos;
+    }
 
-    for (CargoRoute route : cargos) if (!route.isRouted()) notRoutedCargos.add(route);
+    public List<CargoRoute> getClaimedCargos() {
+        claimedCargos = new ArrayList<>();
 
-    return notRoutedCargos;
-  }
+        for (CargoRoute route : cargos) {
+            if (route.isClaimed()) {
+                claimedCargos.add(route);
+            }
+        }
+
+        return claimedCargos;
+    }
+
+    public List<CargoRoute> getNotRoutedCargos() {
+        List<CargoRoute> notRoutedCargos = new ArrayList<>();
+
+        for (CargoRoute route : cargos) if (!route.isRouted()) notRoutedCargos.add(route);
+
+        return notRoutedCargos;
+    }
 }
