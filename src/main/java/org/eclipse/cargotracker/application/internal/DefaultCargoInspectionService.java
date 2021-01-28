@@ -53,7 +53,7 @@ public class DefaultCargoInspectionService implements CargoInspectionService {
         Cargo cargo = cargoRepository.find(trackingId);
 
         if (cargo == null) {
-            logger.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
+            LOGGER.log(Level.WARNING, "Can't inspect non-existing cargo {0}", trackingId);
             return;
         }
 
