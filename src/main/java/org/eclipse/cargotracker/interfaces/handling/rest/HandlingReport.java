@@ -2,10 +2,8 @@ package org.eclipse.cargotracker.interfaces.handling.rest;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import javax.xml.bind.annotation.XmlRootElement;
 
 /** Transfer object for handling reports. */
-@XmlRootElement
 public class HandlingReport {
 
     @NotNull
