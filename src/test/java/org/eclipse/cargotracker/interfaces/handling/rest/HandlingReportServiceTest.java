@@ -61,7 +61,7 @@ public class HandlingReportServiceTest {
                 // add samples.
                 .addClass(SampleLocations.class)
                 .addClass(SampleVoyages.class)
-
+                .addAsResource("test-jboss-logging.properties", "jboss-logging.properties")
                 // add web xml
                 .addAsWebInfResource("test-web.xml", "web.xml")
                 // add Wildfly specific deployment descriptor
@@ -96,7 +96,6 @@ public class HandlingReportServiceTest {
         HandlingReport report = new HandlingReport();
         report.setCompletionTime("2021-02-01 04:26");
         report.setEventType("LOAD");
-
         report.setTrackingId("A001");
         report.setVoyageNumber(SampleVoyages.HONGKONG_TO_NEW_YORK.getVoyageNumber().getIdString());
         report.setUnLocode(SampleLocations.HONGKONG.getUnLocode().getIdString());

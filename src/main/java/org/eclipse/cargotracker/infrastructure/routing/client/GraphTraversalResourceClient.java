@@ -31,7 +31,7 @@ public class GraphTraversalResourceClient {
         try {
             Class<?> clazz =
                     Class.forName(
-                            "org.eclipse.cargotracker.infrastructure.routing.client.JacksonDatatypeJacksonProducer");
+                            "org.eclipse.cargotracker.infrastructure.routing.client.JacksonObjectMapperContextResolver");
             jaxrsClient.register(clazz);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();

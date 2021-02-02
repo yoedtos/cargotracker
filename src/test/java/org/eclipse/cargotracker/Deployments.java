@@ -54,7 +54,7 @@ public class Deployments {
         try {
             Class<?> clazz =
                     Class.forName(
-                            "org.eclipse.cargotracker.infrastructure.routing.client.JacksonDatatypeJacksonProducer");
+                            "org.eclipse.cargotracker.infrastructure.routing.client.JacksonObjectMapperContextResolver");
             war.addClass(clazz);
         } catch (ClassNotFoundException e) {
             LOGGER.log(
