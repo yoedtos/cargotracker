@@ -12,19 +12,13 @@ public class ApplicationEventsStub implements ApplicationEvents {
     HandlingEventRegistrationAttempt attempt;
 
     @Override
-    public void cargoWasHandled(HandlingEvent event) {
-
-    }
+    public void cargoWasHandled(HandlingEvent event) {}
 
     @Override
-    public void cargoWasMisdirected(Cargo cargo) {
-
-    }
+    public void cargoWasMisdirected(Cargo cargo) {}
 
     @Override
-    public void cargoHasArrived(Cargo cargo) {
-
-    }
+    public void cargoHasArrived(Cargo cargo) {}
 
     @Override
     public void receivedHandlingEventRegistrationAttempt(HandlingEventRegistrationAttempt attempt) {

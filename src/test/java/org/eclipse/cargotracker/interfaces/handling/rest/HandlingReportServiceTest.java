@@ -15,15 +15,15 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.ApplicationEvents;
+import org.eclipse.cargotracker.application.util.RestConfiguration;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
-import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent.Type;
 import org.eclipse.cargotracker.domain.model.location.SampleLocations;
 import org.eclipse.cargotracker.domain.model.voyage.SampleVoyages;
+import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAttempt;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -45,19 +45,23 @@ public class HandlingReportServiceTest {
     @Deployment()
     public static WebArchive createDeployment() {
 
-        WebArchive war =
-                ShrinkWrap.create(WebArchive.class, "test-RealtimeCargoTrackingServiceTest.war");
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "test-HandlingReportServiceTest.war");
 
         addExtraJars(war);
         addDomainModels(war);
         addInfraBase(war);
         addApplicationBase(war);
         war.addClass(HandlingReportService.class)
+                .addClass(HandlingReport.class)
                 .addClass(ApplicationEventsStub.class)
                 .addClass(ApplicationEvents.class)
+                .addClass(HandlingEventRegistrationAttempt.class)
+                // rest config.
+                .addClass(RestConfiguration.class)
                 // add samples.
                 .addClass(SampleLocations.class)
                 .addClass(SampleVoyages.class)
+
                 // add web xml
                 .addAsWebInfResource("test-web.xml", "web.xml")
                 // add Wildfly specific deployment descriptor
@@ -92,26 +96,30 @@ public class HandlingReportServiceTest {
         HandlingReport report = new HandlingReport();
         report.setCompletionTime("2021-02-01 04:26");
         report.setEventType("LOAD");
-        report.setTrackingId("AAA");
+
+        report.setTrackingId("A001");
         report.setVoyageNumber(SampleVoyages.HONGKONG_TO_NEW_YORK.getVoyageNumber().getIdString());
         report.setUnLocode(SampleLocations.HONGKONG.getUnLocode().getIdString());
 
-        final WebTarget getAllPostsTarget =
+        final WebTarget postReportTarget =
                 client.target(new URL(base, "rest/handling/reports").toExternalForm());
 
         // Response is an autocloseable resource.
-        try (final Response getAllPostsResponse =
-                getAllPostsTarget
-                        .request()
-                        .header("Content-Type", MediaType.APPLICATION_JSON)
-                        .post(Entity.json(report))) {
-            assertThat(getAllPostsResponse.getStatus()).isEqualTo(202);
+        try (final Response postReportResponse =
+                postReportTarget.request().post(Entity.json(report))) {
+            assertThat(postReportResponse.getStatus()).isEqualTo(202);
+            LOGGER.log(
+                    Level.INFO,
+                    "response of POST rest/handling/reports: {0}",
+                    postReportResponse.getEntity().toString());
+
             assertThat(applicationEventsStub.getAttempt()).isNotNull();
             var attempt = applicationEventsStub.getAttempt();
 
-            assertThat(attempt.getTrackingId()).isEqualTo(new TrackingId("AAA"));
+            assertThat(attempt.getTrackingId()).isEqualTo(new TrackingId("A001"));
             assertThat(attempt.getType()).isEqualTo(Type.LOAD);
-            assertThat(attempt.getVoyageNumber()).isEqualTo(SampleVoyages.HONGKONG_TO_NEW_YORK.getVoyageNumber());
+            assertThat(attempt.getVoyageNumber())
+                    .isEqualTo(SampleVoyages.HONGKONG_TO_NEW_YORK.getVoyageNumber());
         }
     }
 }

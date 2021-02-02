@@ -31,17 +31,17 @@ import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAtt
  * handling event registration system for proper registration.
  */
 @Stateless
-@Path("/handling")
+@Path("handling")
 public class HandlingReportService {
     public static final Logger LOGGER = Logger.getLogger(HandlingReportService.class.getName());
-    public static final String ISO_8601_FORMAT = "yyyy-MM-dd HH:mm";
+    // public static final String ISO_8601_FORMAT = "yyyy-MM-dd HH:mm";
 
     @Inject private ApplicationEvents applicationEvents;
 
     public HandlingReportService() {}
 
     @POST
-    @Path("/reports")
+    @Path("reports")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response submitReport(@NotNull @Valid HandlingReport handlingReport) {
         LocalDateTime completionTime = DateUtil.toDateTime(handlingReport.getCompletionTime());
@@ -69,7 +69,7 @@ public class HandlingReportService {
             applicationEvents.receivedHandlingEventRegistrationAttempt(attempt);
             return accepted().build();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Handling event registration failed: {0}", e.getMessage());
+            LOGGER.log(Level.WARNING, "Handling event registration failed: {0}", e.getMessage());
             return status(Status.BAD_REQUEST)
                     .entity(Collections.singletonMap("error", e.getMessage()))
                     .build();
