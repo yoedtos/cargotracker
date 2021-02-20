@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: cargotracker
       POSTGRES_USER: user
+    command: "--max_prepared_transactions=110"
     volumes:
       - ./data:/var/lib/postgresql
   #      - ./pg-initdb.d:/docker-entrypoint-initdb.d

@@ -1,28 +1,36 @@
 package org.eclipse.cargotracker.interfaces.handling.rest;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
 /** Transfer object for handling reports. */
 public class HandlingReport {
 
-    @NotNull
-    @Size(min = 16, max = 16)
+    @NotBlank(message = "Missing completion time.")
+    @Size(min = 16, max = 16, message = "Completion time value must be sixteen characters long.")
+    // TODO [DDD] Apply regular expression validation.
     private String completionTime;
 
-    @NotNull
-    @Size(min = 4)
+    @NotBlank(message = "Missing tracking ID.")
+    @Size(min = 4, message = "Tracking ID must be at least four characters.")
     private String trackingId;
 
-    @NotNull
-    @Size(min = 4, max = 7)
+    @NotBlank(message = "Missing event type.")
+    @Size(
+            min = 4,
+            max = 7,
+            message = "Event type value must be one of: RECEIVE, LOAD, UNLOAD, CUSTOMS, CLAIM")
+    // TODO [DDD] Apply regular expression validation.
     private String eventType;
 
-    @NotNull
-    @Size(min = 5, max = 5)
+    @NotBlank(message = "UN location code missing.")
+    @Size(min = 5, max = 5, message = "UN location code must be five characters long.")
     private String unLocode;
 
-    @Size(min = 4, max = 5)
+    @Size(
+            min = 4,
+            max = 5,
+            message = "Voyage number value must be between four and five characters long.")
     private String voyageNumber;
 
     public String getCompletionTime() {
