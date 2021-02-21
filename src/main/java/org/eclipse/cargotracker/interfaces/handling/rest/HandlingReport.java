@@ -7,7 +7,11 @@ import javax.validation.constraints.Size;
 public class HandlingReport {
 
     @NotBlank(message = "Missing completion time.")
-    @Size(min = 17, max = 19, message = "Completion time value must be between seventeen and nineteen characters long.")
+    @Size(
+            min = 17,
+            max = 19,
+            message =
+                    "Completion time value must be between seventeen and nineteen characters long.")
     // TODO [DDD] Apply regular expression validation.
     private String completionTime;
 
