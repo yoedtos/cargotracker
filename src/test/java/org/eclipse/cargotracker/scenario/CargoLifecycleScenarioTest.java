@@ -31,7 +31,6 @@ import org.eclipse.cargotracker.application.HandlingEventService;
 import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.internal.DefaultCargoInspectionService;
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
-import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.Cargo;
 import org.eclipse.cargotracker.domain.model.cargo.CargoRepository;
 import org.eclipse.cargotracker.domain.model.cargo.HandlingActivity;
@@ -79,7 +78,8 @@ public class CargoLifecycleScenarioTest {
      */
     private static Location origin = SampleLocations.HONGKONG;
     private static Location destination = SampleLocations.STOCKHOLM;
-    private static LocalDate arrivalDeadline = LocalDate.now().minusYears(1).plusMonths(3).plusDays(18);
+    private static LocalDate arrivalDeadline =
+            LocalDate.now().minusYears(1).plusMonths(3).plusDays(18);
     private static TrackingId trackingId;
     @Inject UserTransaction utx;
     /**
