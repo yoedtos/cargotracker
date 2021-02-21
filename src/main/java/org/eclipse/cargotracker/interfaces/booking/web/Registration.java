@@ -1,17 +1,16 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
-import org.eclipse.cargotracker.application.util.DateUtil;
-import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.Location;
-
+import java.io.Serializable;
+import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.Serializable;
-import java.util.List;
+import org.eclipse.cargotracker.application.util.DateUtil;
+import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.Location;
 
 /**
  * Handles registering cargo. Operates against a dedicated service facade, and could easily be

@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.interfaces.booking.facade.internal.assembler;
 
+import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.Itinerary;
 import org.eclipse.cargotracker.domain.model.cargo.Leg;
 import org.eclipse.cargotracker.domain.model.location.Location;
@@ -18,9 +19,6 @@ import java.util.stream.Collectors;
 
 // TODO [Clean Code] Could this be a CDI singleton?
 public class ItineraryCandidateDtoAssembler {
-
-    public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
-    // private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DT_PATTERN);
 
     public RouteCandidate toDto(Itinerary itinerary) {
         List<org.eclipse.cargotracker.interfaces.booking.facade.dto.Leg> legDTOs =
@@ -58,14 +56,8 @@ public class ItineraryCandidateDtoAssembler {
                             voyage,
                             from,
                             to,
-                            ZonedDateTime.parse(
-                                            legDTO.getLoadTime(),
-                                            DateTimeFormatter.ofPattern(DT_PATTERN))
-                                    .toLocalDateTime(),
-                            ZonedDateTime.parse(
-                                            legDTO.getUnloadTime(),
-                                            DateTimeFormatter.ofPattern(DT_PATTERN))
-                                    .toLocalDateTime()));
+                            DateUtil.toDateTime(legDTO.getLoadTime()),
+                            DateUtil.toDateTime(legDTO.getUnloadTime())));
         }
 
         return new Itinerary(legs);

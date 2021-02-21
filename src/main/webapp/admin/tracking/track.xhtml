@@ -1,8 +1,8 @@
-<html xmlns:h="http://xmlns.jcp.org/jsf/html"
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:f="http://java.sun.com/jsf/core"
-      xmlns="http://www.w3.org/1999/xhtml">
+      xmlns:f="http://java.sun.com/jsf/core">
 <ui:composition template="/WEB-INF/templates/common/admin.xhtml">
     <ui:define name="title">Track Cargo</ui:define>
     <ui:define name="content">
@@ -37,13 +37,11 @@
                     <div id="result">
 
                         <p>
-                            Cargo <strong>
-                            <h:link value="#{admin.track.trackingId}"
-                                    id="trackingId" outcome="/admin/show.xhtml?faces-redirect=true"
-                                    style="text-decoration: none;color: black;">
-                                <f:param name="trackingId" value="#{admin.track.trackingId}"/>
-                            </h:link>
-                        </strong> is currently <strong>#{admin.track.cargo.statusText}</strong>
+                            Cargo <strong><h:link value="#{admin.track.trackingId}"
+                                                  id="trackingId" outcome="/admin/show.xhtml?faces-redirect=true"
+                                                  style="text-decoration: none;color: black;">
+                            <f:param name="trackingId" value="#{admin.track.trackingId}"/>
+                        </h:link></strong> is currently <strong>#{admin.track.cargo.statusText}</strong>
                         </p>
 
                         <p:tooltip id="toolTipFade" for="trackingId"
@@ -76,8 +74,7 @@
 
                 <div class="ui-g-12">
                     <p:separator/>
-                    <br/>
-                    <br/>
+                    <br/> <br/>
                 </div>
 
                 <h:outputLabel

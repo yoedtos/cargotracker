@@ -1,5 +1,18 @@
 package org.eclipse.cargotracker.interfaces.handling.file;
 
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.batch.api.chunk.AbstractItemReader;
+import javax.batch.runtime.context.JobContext;
+import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
+import javax.inject.Named;
 import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
@@ -7,25 +20,11 @@ import org.eclipse.cargotracker.domain.model.location.UnLocode;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAttempt;
 
-import javax.batch.api.chunk.AbstractItemReader;
-import javax.batch.runtime.context.JobContext;
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 @Dependent
 @Named("EventItemReader")
 public class EventItemReader extends AbstractItemReader {
 
     private static final String UPLOAD_DIRECTORY = "upload_directory";
-    private static final String ISO_8601_FORMAT = "yyyy-MM-dd HH:mm";
 
     @Inject private Logger logger;
 
@@ -106,7 +105,7 @@ public class EventItemReader extends AbstractItemReader {
 
         try {
             completionTime = DateUtil.toDateTime(result[0]);
-        } catch (Exception e) {
+        } catch (DateTimeParseException e) {
             throw new EventLineParseException("Cannot parse completion time", e, line);
         }
 

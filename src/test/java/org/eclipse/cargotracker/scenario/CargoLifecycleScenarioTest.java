@@ -1,5 +1,28 @@
 package org.eclipse.cargotracker.scenario;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.eclipse.cargotracker.Deployments.addApplicationBase;
+import static org.eclipse.cargotracker.Deployments.addDomainModels;
+import static org.eclipse.cargotracker.Deployments.addDomainRepositories;
+import static org.eclipse.cargotracker.Deployments.addDomainService;
+import static org.eclipse.cargotracker.Deployments.addExtraJars;
+import static org.eclipse.cargotracker.Deployments.addInfraBase;
+import static org.eclipse.cargotracker.Deployments.addInfraPersistence;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Status;
+import javax.transaction.UserTransaction;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.ApplicationEvents;
 import org.eclipse.cargotracker.application.BookingService;
@@ -9,7 +32,15 @@ import org.eclipse.cargotracker.application.internal.DefaultBookingService;
 import org.eclipse.cargotracker.application.internal.DefaultCargoInspectionService;
 import org.eclipse.cargotracker.application.internal.DefaultHandlingEventService;
 import org.eclipse.cargotracker.application.util.DateUtil;
-import org.eclipse.cargotracker.domain.model.cargo.*;
+import org.eclipse.cargotracker.domain.model.cargo.Cargo;
+import org.eclipse.cargotracker.domain.model.cargo.CargoRepository;
+import org.eclipse.cargotracker.domain.model.cargo.HandlingActivity;
+import org.eclipse.cargotracker.domain.model.cargo.Itinerary;
+import org.eclipse.cargotracker.domain.model.cargo.Leg;
+import org.eclipse.cargotracker.domain.model.cargo.RouteSpecification;
+import org.eclipse.cargotracker.domain.model.cargo.RoutingStatus;
+import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
+import org.eclipse.cargotracker.domain.model.cargo.TransportStatus;
 import org.eclipse.cargotracker.domain.model.handling.CannotCreateHandlingEventException;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEventFactory;
@@ -36,23 +67,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.Status;
-import javax.transaction.UserTransaction;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.eclipse.cargotracker.Deployments.*;
-
 @RunWith(Arquillian.class)
 @Category(IntegrationTests.class)
 public class CargoLifecycleScenarioTest {
@@ -65,7 +79,7 @@ public class CargoLifecycleScenarioTest {
      */
     private static Location origin = SampleLocations.HONGKONG;
     private static Location destination = SampleLocations.STOCKHOLM;
-    private static LocalDate arrivalDeadline = DateUtil.toDate("2014-03-18");
+    private static LocalDate arrivalDeadline = LocalDate.now().minusYears(1).plusMonths(3).plusDays(18);
     private static TrackingId trackingId;
     @Inject UserTransaction utx;
     /**
@@ -282,7 +296,7 @@ public class CargoLifecycleScenarioTest {
     public void testReceiveInHongKong() throws Exception {
         LOGGER.log(Level.INFO, "receive in HONGKONG::tracking id: {0}", trackingId);
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-01", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(1),
                 trackingId,
                 null,
                 SampleLocations.HONGKONG.getUnLocode(),
@@ -308,7 +322,7 @@ public class CargoLifecycleScenarioTest {
     public void testLoadInHongKong() throws Exception {
         LOGGER.log(Level.INFO, "load in HONGKONG::tracking id: {0}", trackingId);
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-03", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(3),
                 trackingId,
                 SampleVoyages.v100.getVoyageNumber(),
                 SampleLocations.HONGKONG.getUnLocode(),
@@ -355,7 +369,7 @@ public class CargoLifecycleScenarioTest {
         assertThatThrownBy(
                         () ->
                                 handlingEventService.registerHandlingEvent(
-                                        DateUtil.toDateTime("2014-03-05", "00:00"),
+                                        LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(5),
                                         trackingId,
                                         noSuchVoyageNumber,
                                         noSuchUnLocode,
@@ -371,7 +385,7 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "unload in Tokyo incorrectly, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-05", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(5),
                 trackingId,
                 SampleVoyages.v100.getVoyageNumber(),
                 SampleLocations.TOKYO.getUnLocode(),
@@ -498,7 +512,7 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "load in Tokyo now, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-08", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(8),
                 trackingId,
                 SampleVoyages.v300.getVoyageNumber(),
                 SampleLocations.TOKYO.getUnLocode(),
@@ -530,7 +544,7 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "unload in Hamburg, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-12", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(12),
                 trackingId,
                 SampleVoyages.v300.getVoyageNumber(),
                 SampleLocations.HAMBURG.getUnLocode(),
@@ -561,7 +575,7 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "load in Hamburg,  tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-14", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(14),
                 trackingId,
                 SampleVoyages.v400.getVoyageNumber(),
                 SampleLocations.HAMBURG.getUnLocode(),
@@ -593,7 +607,7 @@ public class CargoLifecycleScenarioTest {
         LOGGER.log(Level.INFO, "unload in STOCKHOLM, tracking id: {0}", trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-15", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(15),
                 trackingId,
                 SampleVoyages.v400.getVoyageNumber(),
                 SampleLocations.STOCKHOLM.getUnLocode(),
@@ -625,7 +639,7 @@ public class CargoLifecycleScenarioTest {
                 trackingId);
 
         handlingEventService.registerHandlingEvent(
-                DateUtil.toDateTime("2014-03-16", "00:00"),
+                LocalDateTime.now().minusYears(1).plusMonths(3).plusDays(16),
                 trackingId,
                 null,
                 SampleLocations.STOCKHOLM.getUnLocode(),
@@ -743,8 +757,14 @@ public class CargoLifecycleScenarioTest {
                                                         SampleLocations.HONGKONG.getUnLocode()),
                                                 locationRepository.find(
                                                         SampleLocations.NEWYORK.getUnLocode()),
-                                                DateUtil.toDateTime("2014-03-03", "00:00"),
-                                                DateUtil.toDateTime("2014-03-09", "00:00")),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(3),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(9)),
                                         new Leg(
                                                 voyageRepository.find(
                                                         SampleVoyages.v200.getVoyageNumber()),
@@ -752,8 +772,14 @@ public class CargoLifecycleScenarioTest {
                                                         SampleLocations.NEWYORK.getUnLocode()),
                                                 locationRepository.find(
                                                         SampleLocations.CHICAGO.getUnLocode()),
-                                                DateUtil.toDateTime("2014-03-10", "00:00"),
-                                                DateUtil.toDateTime("2014-03-14", "00:00")),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(10),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(14)),
                                         new Leg(
                                                 voyageRepository.find(
                                                         SampleVoyages.v200.getVoyageNumber()),
@@ -761,8 +787,14 @@ public class CargoLifecycleScenarioTest {
                                                         SampleLocations.CHICAGO.getUnLocode()),
                                                 locationRepository.find(
                                                         SampleLocations.STOCKHOLM.getUnLocode()),
-                                                DateUtil.toDateTime("2014-03-07", "00:00"),
-                                                DateUtil.toDateTime("2014-03-11", "00:00")))));
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(7),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(11)))));
             } else {
                 // Tokyo - Hamburg - SampleLocations.STOCKHOLM, rerouting misdirected cargo from
                 // Tokyo
@@ -776,8 +808,14 @@ public class CargoLifecycleScenarioTest {
                                                         SampleLocations.TOKYO.getUnLocode()),
                                                 locationRepository.find(
                                                         SampleLocations.HAMBURG.getUnLocode()),
-                                                DateUtil.toDateTime("2014-03-08", "00:00"),
-                                                DateUtil.toDateTime("2014-03-12", "00:00")),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(8),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(12)),
                                         new Leg(
                                                 voyageRepository.find(
                                                         SampleVoyages.v400.getVoyageNumber()),
@@ -785,8 +823,14 @@ public class CargoLifecycleScenarioTest {
                                                         SampleLocations.HAMBURG.getUnLocode()),
                                                 locationRepository.find(
                                                         SampleLocations.STOCKHOLM.getUnLocode()),
-                                                DateUtil.toDateTime("2014-03-14", "00:00"),
-                                                DateUtil.toDateTime("2014-03-15", "00:00")))));
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(14),
+                                                LocalDateTime.now()
+                                                        .minusYears(1)
+                                                        .plusMonths(3)
+                                                        .plusDays(15)))));
             }
         }
     }

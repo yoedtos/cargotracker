@@ -1,16 +1,13 @@
 package org.eclipse.cargotracker.interfaces.booking.facade.dto;
 
-import org.eclipse.cargotracker.application.util.DateUtil;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import org.eclipse.cargotracker.application.util.DateUtil;
 
 /** DTO for a leg in an itinerary. */
 public class Leg implements Serializable {
 
-    public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
     private static final long serialVersionUID = 1L;
-    // private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DT_PATTERN);
     private final String voyageNumber;
     private final String fromUnLocode;
     private final String fromName;
@@ -68,24 +65,8 @@ public class Leg implements Serializable {
         return loadTime;
     }
 
-    public String getLoadTimeDate() {
-        return DateUtil.getDateFromDateTime(loadTime);
-    }
-
-    public String getLoadTimeTime() {
-        return DateUtil.getTimeFromDateTime(loadTime);
-    }
-
     public String getUnloadTime() {
         return unloadTime;
-    }
-
-    public String getUnloadTimeTime() {
-        return DateUtil.getTimeFromDateTime(unloadTime);
-    }
-
-    public String getUnloadTimeDate() {
-        return DateUtil.getDateFromDateTime(unloadTime);
     }
 
     @Override

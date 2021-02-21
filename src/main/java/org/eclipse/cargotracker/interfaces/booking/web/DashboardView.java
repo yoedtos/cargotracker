@@ -1,13 +1,12 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
+import java.io.Serializable;
+import javax.faces.view.ViewScoped;
+import javax.inject.Named;
 import org.primefaces.model.DashboardColumn;
 import org.primefaces.model.DashboardModel;
 import org.primefaces.model.DefaultDashboardColumn;
 import org.primefaces.model.DefaultDashboardModel;
-
-import javax.faces.view.ViewScoped;
-import javax.inject.Named;
-import java.io.Serializable;
 
 @Named
 @ViewScoped

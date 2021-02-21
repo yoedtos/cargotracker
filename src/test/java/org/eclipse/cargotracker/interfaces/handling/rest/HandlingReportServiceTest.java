@@ -8,6 +8,7 @@ import static org.eclipse.cargotracker.Deployments.addInfraBase;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -18,6 +19,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import org.eclipse.cargotracker.IntegrationTests;
 import org.eclipse.cargotracker.application.ApplicationEvents;
+import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.application.util.RestConfiguration;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent.Type;
@@ -94,7 +96,7 @@ public class HandlingReportServiceTest {
     @Test
     public void submitReport() throws MalformedURLException {
         HandlingReport report = new HandlingReport();
-        report.setCompletionTime("2021-02-01 04:26");
+        report.setCompletionTime(DateUtil.toString(LocalDateTime.now()));
         report.setEventType("LOAD");
         report.setTrackingId("A001");
         report.setVoyageNumber(SampleVoyages.HONGKONG_TO_NEW_YORK.getVoyageNumber().getIdString());

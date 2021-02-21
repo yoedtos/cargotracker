@@ -1,17 +1,14 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
-import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
-import org.primefaces.PrimeFaces;
-
+import java.io.Serializable;
+import java.time.LocalDate;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.Serializable;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import org.eclipse.cargotracker.application.util.DateUtil;
+import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
+import org.primefaces.PrimeFaces;
 
 /**
  * Handles changing the cargo destination. Operates against a dedicated service facade, and could
@@ -25,13 +22,12 @@ import java.time.format.DateTimeFormatter;
  */
 @Named
 @ViewScoped
-public class ChangeArrivalDeadlineDate implements Serializable {
+public class ChangeArrivalDeadline implements Serializable {
 
-    public static final String DATE_PATTERN = "MM/dd/yyyy";
     private static final long serialVersionUID = 1L;
     private String trackingId;
     private CargoRoute cargo;
-    private LocalDate arrivalDeadlineDate;
+    private LocalDate arrivalDeadline;
 
     @Inject private BookingServiceFacade bookingServiceFacade;
 
@@ -47,24 +43,21 @@ public class ChangeArrivalDeadlineDate implements Serializable {
         return cargo;
     }
 
-    public LocalDate getArrivalDeadlineDate() {
-        return arrivalDeadlineDate;
+    public LocalDate getArrivalDeadline() {
+        return arrivalDeadline;
     }
 
-    public void setArrivalDeadlineDate(LocalDate arrivalDeadlineDate) {
-        this.arrivalDeadlineDate = arrivalDeadlineDate;
+    public void setArrivalDeadline(LocalDate arrivalDeadline) {
+        this.arrivalDeadline = arrivalDeadline;
     }
 
     public void load() {
         cargo = bookingServiceFacade.loadCargoForRouting(trackingId);
-        DateFormat df = new SimpleDateFormat(DATE_PATTERN);
-        arrivalDeadlineDate =
-                LocalDate.parse(
-                        cargo.getArrivalDeadline(), DateTimeFormatter.ofPattern(DATE_PATTERN));
+        arrivalDeadline = DateUtil.toDate(cargo.getArrivalDeadline());
     }
 
     public void changeArrivalDeadline() {
-        bookingServiceFacade.changeDeadline(trackingId, arrivalDeadlineDate);
+        bookingServiceFacade.changeDeadline(trackingId, arrivalDeadline);
         PrimeFaces.current().dialog().closeDynamic("DONE");
     }
 }

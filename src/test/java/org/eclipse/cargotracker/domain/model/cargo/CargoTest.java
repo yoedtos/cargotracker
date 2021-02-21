@@ -1,6 +1,15 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
-import org.eclipse.cargotracker.application.util.DateUtil;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.handling.HandlingHistory;
 import org.eclipse.cargotracker.domain.model.location.Location;
@@ -10,17 +19,6 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import static org.junit.Assert.*;
-
-// TODO [Jakarta EE 8] Move to the Java Date-Time API for date manipulation. Also avoid hard-coded
-// dates.
 public class CargoTest {
 
     private final List<HandlingEvent> events = new ArrayList<>();
@@ -35,7 +33,7 @@ public class CargoTest {
     @Test
     public void testConstruction() {
         TrackingId trackingId = new TrackingId("XYZ");
-        LocalDate arrivalDeadline = DateUtil.toDate("2009-03-13");
+        LocalDate arrivalDeadline = LocalDate.now().minusYears(1).plusMonths(3).plusDays(3);
         RouteSpecification routeSpecification =
                 new RouteSpecification(
                         SampleLocations.STOCKHOLM, SampleLocations.MELBOURNE, arrivalDeadline);
@@ -197,8 +195,8 @@ public class CargoTest {
         HandlingEvent event =
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-01", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
                         HandlingEvent.Type.RECEIVE,
                         SampleLocations.STOCKHOLM);
         events.add(event);
@@ -213,8 +211,8 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-09", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(9),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(9),
                         HandlingEvent.Type.CLAIM,
                         SampleLocations.MELBOURNE));
         cargo.deriveDeliveryProgress(new HandlingHistory(events));
@@ -234,16 +232,16 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-01", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.STOCKHOLM,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-02", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.HAMBURG,
                         voyage));
@@ -251,16 +249,16 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-03", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.HAMBURG,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-04", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(4),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(4),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.HONGKONG,
                         voyage));
@@ -282,24 +280,24 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-01", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.STOCKHOLM,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-02", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.HAMBURG,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-03", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.HAMBURG,
                         voyage));
@@ -321,16 +319,16 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-01", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(1),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.STOCKHOLM,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-02", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(2),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.HAMBURG,
                         voyage));
@@ -338,16 +336,16 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-03", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(3),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.HAMBURG,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-04", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(4),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(4),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.HONGKONG,
                         voyage));
@@ -355,16 +353,16 @@ public class CargoTest {
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-05", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(5),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(5),
                         HandlingEvent.Type.LOAD,
                         SampleLocations.HONGKONG,
                         voyage));
         events.add(
                 new HandlingEvent(
                         cargo,
-                        DateUtil.toDateTime("2007-12-07", "00:00"),
-                        LocalDateTime.now(),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(7),
+                        LocalDateTime.now().minusYears(1).plusMonths(12).plusDays(7),
                         HandlingEvent.Type.UNLOAD,
                         SampleLocations.MELBOURNE,
                         voyage));

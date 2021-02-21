@@ -1,19 +1,18 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
-import org.primefaces.PrimeFaces;
-import org.primefaces.event.SelectEvent;
-
-import javax.enterprise.context.SessionScoped;
-import javax.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.enterprise.context.SessionScoped;
+import javax.inject.Named;
+import org.primefaces.PrimeFaces;
+import org.primefaces.event.SelectEvent;
 
-@Named("changeArrivalDeadlineDateDialog")
+@Named
 @SessionScoped
-public class ChangeArrivalDeadlineDateDialog implements Serializable {
+public class ChangeArrivalDeadlineDialog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -32,7 +31,7 @@ public class ChangeArrivalDeadlineDateDialog implements Serializable {
 
         PrimeFaces.current()
                 .dialog()
-                .openDynamic("/admin/dialogs/changeArrivalDeadlineDate.xhtml", options, params);
+                .openDynamic("/admin/dialogs/change_arrival_deadline.xhtml", options, params);
     }
 
     public void handleReturn(@SuppressWarnings("rawtypes") SelectEvent event) {}

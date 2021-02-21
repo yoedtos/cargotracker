@@ -1,21 +1,18 @@
 package org.eclipse.cargotracker.interfaces.booking.facade.dto;
 
-import org.eclipse.cargotracker.application.util.DateUtil;
-import org.eclipse.cargotracker.application.util.LocationUtil;
-
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.eclipse.cargotracker.application.util.DateUtil;
+import org.eclipse.cargotracker.application.util.LocationUtil;
 
 /** DTO for registering and routing a cargo. */
 public class CargoRoute implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    // public static final String DT_PATTERN = "MM/dd/yyyy hh:mm a z";
-    // private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DT_PATTERN);
 
     private final String trackingId;
     private final String origin;
@@ -32,7 +29,7 @@ public class CargoRoute implements Serializable {
             String trackingId,
             String origin,
             String finalDestination,
-            LocalDateTime arrivalDeadline,
+            LocalDate arrivalDeadline,
             boolean misrouted,
             boolean claimed,
             String lastKnownLocation,
@@ -114,14 +111,6 @@ public class CargoRoute implements Serializable {
 
     public String getArrivalDeadline() {
         return arrivalDeadline;
-    }
-
-    public String getArrivalDeadlineDate() {
-        return DateUtil.getDateFromDateTime(arrivalDeadline);
-    }
-
-    public String getArrivalDeadlineTime() {
-        return DateUtil.getTimeFromDateTime(arrivalDeadline);
     }
 
     public boolean isClaimed() {

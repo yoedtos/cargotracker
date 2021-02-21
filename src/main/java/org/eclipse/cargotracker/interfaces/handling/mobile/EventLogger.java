@@ -1,6 +1,19 @@
 package org.eclipse.cargotracker.interfaces.handling.mobile;
 
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
+import javax.faces.model.SelectItem;
+import javax.faces.view.ViewScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.transaction.Transactional;
 import org.eclipse.cargotracker.application.ApplicationEvents;
+import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.Cargo;
 import org.eclipse.cargotracker.domain.model.cargo.CargoRepository;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
@@ -14,19 +27,6 @@ import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAttempt;
 import org.primefaces.event.FlowEvent;
-
-import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
-import javax.faces.model.SelectItem;
-import javax.faces.view.ViewScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.transaction.Transactional;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Named
 @ViewScoped
@@ -50,7 +50,7 @@ public class EventLogger implements Serializable {
     private String location;
     private String eventType;
     private String voyageNumber;
-    private LocalDateTime completionDate;
+    private LocalDateTime completionTime;
 
     public String getTrackingId() {
         return trackingId;
@@ -96,12 +96,20 @@ public class EventLogger implements Serializable {
         return voyages;
     }
 
-    public LocalDateTime getCompletionDate() {
-        return completionDate;
+    public LocalDateTime getCompletionTime() {
+        return completionTime;
     }
 
-    public void setCompletionDate(LocalDateTime completionDate) {
-        this.completionDate = completionDate;
+    public void setCompletionTime(LocalDateTime completionTime) {
+        this.completionTime = completionTime;
+    }
+
+    public String getCompletionTimeValue() {
+        return DateUtil.toString(completionTime);
+    }
+
+    public String getCompletionTimePattern() {
+        return DateUtil.DATE_TIME_FORMAT;
     }
 
     @PostConstruct
@@ -147,7 +155,7 @@ public class EventLogger implements Serializable {
         }
 
         if ("dateTab".equals(event.getNewStep())) {
-            completionDate = LocalDateTime.now();
+            completionTime = LocalDateTime.now();
         }
 
         return event.getNewStep();
@@ -160,8 +168,7 @@ public class EventLogger implements Serializable {
             FacesMessage message =
                     new FacesMessage(
                             FacesMessage.SEVERITY_ERROR,
-                            "When a cargo is LOADed or UNLOADed a Voyage should be selected,"
-                                    + " please fix errors to continue.",
+                            "When a cargo is LOADed or UNLOADed a Voyage should be selected, please fix errors to continue.",
                             "");
             FacesContext.getCurrentInstance().addMessage(null, message);
             return false;
@@ -186,7 +193,7 @@ public class EventLogger implements Serializable {
 
         HandlingEventRegistrationAttempt attempt =
                 new HandlingEventRegistrationAttempt(
-                        LocalDateTime.now(), completionDate, trackingId, voyage, type, location);
+                        LocalDateTime.now(), completionTime, trackingId, voyage, type, location);
 
         applicationEvents.receivedHandlingEventRegistrationAttempt(attempt);
 

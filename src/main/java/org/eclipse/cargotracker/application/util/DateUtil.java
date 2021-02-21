@@ -3,45 +3,35 @@ package org.eclipse.cargotracker.application.util;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-/** A few utils for working with Date. */
+/** A few utilities for working with Date. */
 // TODO [Clean Code] Make this a CDI singleton?
 public class DateUtil {
-    public static final String DATE_PATTERN = "yyyy-MM-dd";
-    public static final String DT_PATTERN = "yyyy-MM-dd HH:mm";
+    public static final String DATE_FORMAT = "M/d/yyyy";
+    public static final String DATE_TIME_FORMAT = "M/d/yyyy h:m a";
 
-    public static final String DT_FORMAT = "MM/dd/yyyy hh:mm a z";
-    // can not extract zone id from a `LocalDateTime`
-    // public static final String DT_FORMAT = "MM/dd/yyyy hh:mm";
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern(DATE_TIME_FORMAT).withZone(ZoneId.systemDefault());
 
     private DateUtil() {}
 
     public static LocalDate toDate(String date) {
-        return LocalDate.parse(date, DateTimeFormatter.ofPattern(DATE_PATTERN));
+        return LocalDate.parse(date, DATE_FORMATTER);
     }
 
     public static LocalDateTime toDateTime(String datetime) {
-        return LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern(DT_PATTERN));
+        return LocalDateTime.parse(datetime, DATE_TIME_FORMATTER);
     }
 
-    public static LocalDateTime toDateTime(String date, String time) {
-        return toDateTime(date + " " + time);
+    public static String toString(LocalDateTime dateTime) {
+        return dateTime.format(DATE_TIME_FORMATTER);
     }
 
-    public static String toString(LocalDateTime dt) {
-        return DateTimeFormatter.ofPattern(DT_FORMAT)
-                .format(ZonedDateTime.of(dt, ZoneId.systemDefault()));
-    }
-
-    public static String getDateFromDateTime(String dateTime) {
-        // 03/15/2014 12:00 AM CET
-        return dateTime.substring(0, dateTime.indexOf(" "));
-    }
-
-    public static String getTimeFromDateTime(String dateTime) {
-        // 03/15/2014 12:00 AM CET
-        return dateTime.substring(dateTime.indexOf(" ") + 1);
+    public static String toString(LocalDate date) {
+        return date.format(DATE_FORMATTER);
     }
 }
