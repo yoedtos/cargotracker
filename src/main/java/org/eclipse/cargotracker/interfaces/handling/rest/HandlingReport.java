@@ -10,8 +10,7 @@ public class HandlingReport {
     @Size(
             min = 15,
             max = 19,
-            message =
-                    "Completion time value must be between fifteen and nineteen characters long.")
+            message = "Completion time value must be between fifteen and nineteen characters long.")
     // TODO [DDD] Apply regular expression validation.
     private String completionTime;
 

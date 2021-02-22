@@ -44,7 +44,11 @@ public class GraphTraversalService {
                                     "Destination UN location code value must be five characters long.")
                     @QueryParam("destination")
                     String destinationUnLocode,
-            @Size(min = 8, max = 10, message = "Deadline value must be between eight and ten characters long.")
+            @Size(
+                            min = 8,
+                            max = 10,
+                            message =
+                                    "Deadline value must be between eight and ten characters long.")
                     @QueryParam("deadline")
                     String deadline) {
         LocalDateTime date = nextDate(LocalDateTime.now());
