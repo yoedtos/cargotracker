@@ -1,21 +1,20 @@
 package org.eclipse.pathfinder.api;
 
-import org.eclipse.pathfinder.internal.GraphDao;
-
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import org.eclipse.pathfinder.internal.GraphDao;
 
 @Stateless
 @Path("/graph-traversal")
@@ -30,9 +29,24 @@ public class GraphTraversalService {
     @Path("/shortest-path")
     @Produces({"application/json", "application/xml; qs=.75"})
     public List<TransitPath> findShortestPath(
-            @NotNull @Size(min = 5, max = 5) @QueryParam("origin") String originUnLocode,
-            @NotNull @Size(min = 5, max = 5) @QueryParam("destination") String destinationUnLocode,
-            @QueryParam("deadline") String deadline) {
+            @NotBlank(message = "Missing origin UN location code.")
+                    @Size(
+                            min = 5,
+                            max = 5,
+                            message = "Origin UN location code value must be five characters long.")
+                    @QueryParam("origin")
+                    String originUnLocode,
+            @NotBlank(message = "Missing destination UN location code.")
+                    @Size(
+                            min = 5,
+                            max = 5,
+                            message =
+                                    "Destination UN location code value must be five characters long.")
+                    @QueryParam("destination")
+                    String destinationUnLocode,
+            @Size(min = 8, max = 10, message = "Deadline value must be between eight and ten characters long.")
+                    @QueryParam("deadline")
+                    String deadline) {
         LocalDateTime date = nextDate(LocalDateTime.now());
 
         List<String> allVertices = dao.listLocations();
