@@ -1,8 +1,9 @@
 target
 .settings
 .metadata
-/.classpath
-/.project.idea
+.classpath
+.project
+.idea
 *.iml
-.idea/
 nb*
+data
