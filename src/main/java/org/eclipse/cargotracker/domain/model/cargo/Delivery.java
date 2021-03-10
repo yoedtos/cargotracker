@@ -168,7 +168,7 @@ public class Delivery implements Serializable {
     }
 
     public LocalDateTime getEstimatedTimeOfArrival() {
-        return eta != ETA_UNKOWN ? eta : ETA_UNKOWN;
+        return eta;
     }
 
     // Hibernate issue:

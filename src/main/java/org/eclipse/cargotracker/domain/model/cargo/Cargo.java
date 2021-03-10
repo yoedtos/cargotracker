@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -59,15 +60,22 @@ public class Cargo implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(Cargo.class.getName());
 
     @Id @GeneratedValue private Long id;
-    @Embedded private TrackingId trackingId;
+
+    @Embedded
+    @NotNull(message = "Tracking ID is required")
+    private TrackingId trackingId;
 
     @ManyToOne
     @JoinColumn(name = "origin_id", updatable = false)
+    @NotNull
     private Location origin;
 
-    @Embedded private RouteSpecification routeSpecification;
-    @Embedded private Itinerary itinerary;
-    @Embedded private Delivery delivery;
+    @Embedded
+    @NotNull(message = "Route specification is required")
+    private RouteSpecification routeSpecification;
+
+    @Embedded @NotNull private Itinerary itinerary;
+    @Embedded @NotNull private Delivery delivery;
 
     public Cargo() {
         // Nothing to initialize.

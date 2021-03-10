@@ -246,8 +246,7 @@ public class ApplicationEventsTest {
         private TrackingId trackingId;
 
         @Override
-        public void inspectCargo(
-                @NotNull(message = "Tracking ID is required") TrackingId trackingId) {
+        public void inspectCargo(TrackingId trackingId) {
             logger.log(Level.INFO, "tracking id: {0}", trackingId);
             this.trackingId = trackingId;
             latch.countDown();

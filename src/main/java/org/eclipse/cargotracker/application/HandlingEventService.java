@@ -1,5 +1,7 @@
 package org.eclipse.cargotracker.application;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
 import org.eclipse.cargotracker.domain.model.handling.CannotCreateHandlingEventException;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
@@ -15,10 +17,10 @@ public interface HandlingEventService {
      * been handled.
      */
     void registerHandlingEvent(
-            LocalDateTime completionTime,
-            TrackingId trackingId,
-            VoyageNumber voyageNumber,
-            UnLocode unLocode,
-            HandlingEvent.Type type)
+            @NotNull(message = "Completion time is required.") LocalDateTime completionTime,
+            @NotNull(message = "Tracking ID is required.") @Valid TrackingId trackingId,
+            @Valid VoyageNumber voyageNumber,
+            @NotNull(message = "Location is required.") @Valid UnLocode unLocode,
+            @NotNull(message = "Type is required.") HandlingEvent.Type type)
             throws CannotCreateHandlingEventException;
 }

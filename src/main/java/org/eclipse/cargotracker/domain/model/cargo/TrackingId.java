@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
+import javax.validation.constraints.NotEmpty;
 import org.apache.commons.lang3.Validate;
 
 import javax.persistence.Column;
@@ -13,6 +14,7 @@ public class TrackingId implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Column(name = "tracking_id", unique = true, updatable = false)
+    @NotEmpty(message = "Tracking ID cannot be empty.")
     private String id;
 
     public TrackingId() {}

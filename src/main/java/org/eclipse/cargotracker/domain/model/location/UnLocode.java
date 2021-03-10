@@ -1,9 +1,9 @@
 package org.eclipse.cargotracker.domain.model.location;
 
+import javax.validation.constraints.NotEmpty;
 import org.apache.commons.lang3.Validate;
 
 import javax.persistence.Embeddable;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
@@ -21,7 +21,7 @@ public class UnLocode implements Serializable {
     private static final java.util.regex.Pattern VALID_PATTERN =
             java.util.regex.Pattern.compile("[a-zA-Z]{2}[a-zA-Z2-9]{3}");
 
-    @NotNull
+    @NotEmpty(message = "Location code must not be empty")
     // Country code is exactly two letters.
     // Location code is usually three letters, but may contain the numbers 2-9
     // as well.

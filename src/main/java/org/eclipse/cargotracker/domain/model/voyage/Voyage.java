@@ -1,14 +1,17 @@
 package org.eclipse.cargotracker.domain.model.voyage;
 
-import org.apache.commons.lang3.Validate;
-import org.eclipse.cargotracker.domain.model.location.Location;
-
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.NamedQuery;
+import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.Validate;
+import org.eclipse.cargotracker.domain.model.location.Location;
 
 @Entity
 @NamedQuery(
@@ -22,9 +25,13 @@ public class Voyage implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id @GeneratedValue private Long id;
 
-    @Embedded @NotNull private VoyageNumber voyageNumber;
+    @Embedded
+    @NotNull(message = "Voyage number is required")
+    private VoyageNumber voyageNumber;
 
-    @Embedded @NotNull private Schedule schedule;
+    @Embedded
+    @NotNull(message = "Schedule is required")
+    private Schedule schedule;
 
     public Voyage() {
         // Nothing to initialize

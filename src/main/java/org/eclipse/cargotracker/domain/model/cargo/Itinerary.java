@@ -1,5 +1,6 @@
 package org.eclipse.cargotracker.domain.model.cargo;
 
+import javax.validation.constraints.NotEmpty;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.location.Location;
@@ -35,6 +36,7 @@ public class Itinerary implements Serializable {
     // The `OrderBy` ensures the order of list element in mem.
     @OrderBy("loadTime")
     @Size(min = 1)
+    @NotEmpty(message = "Legs must not be empty")
     private List<Leg> legs = Collections.emptyList();
 
     public Itinerary() {

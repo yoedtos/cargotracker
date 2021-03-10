@@ -1,11 +1,15 @@
 package org.eclipse.cargotracker.domain.model.location;
 
+import java.io.Serializable;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.NamedQuery;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.cargotracker.application.util.LocationUtil;
-
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.io.Serializable;
 
 /**
  * A location in our model is stops on a journey, such as cargo origin or destination, or carrier
@@ -24,8 +28,8 @@ public class Location implements Serializable {
     public static final Location UNKNOWN = new Location(new UnLocode("XXXXX"), "Unknown location");
     private static final long serialVersionUID = 1L;
     @Id @GeneratedValue private Long id;
-    @Embedded private UnLocode unLocode;
-    @NotNull private String name;
+    @Embedded @NotNull private UnLocode unLocode;
+    @NotEmpty private String name;
 
     public Location() {
         // Nothing to do.
