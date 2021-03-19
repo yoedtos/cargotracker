@@ -32,7 +32,6 @@ import javax.jms.Destination;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.transaction.UserTransaction;
-import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
