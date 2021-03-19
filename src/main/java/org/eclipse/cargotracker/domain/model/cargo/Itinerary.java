@@ -24,17 +24,22 @@ public class Itinerary implements Serializable {
     // Changes applied according to WildFly/Hibernate requirements.
     // The `orphanRemoval = true` option will causes a `all-delete-orphan` exception under
     // WildFly/Hibernate.
-    // (The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception)
+    // (There is a famous lazy initialization exception you could encounter WildFly/Hibernate.
+    // The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception 
+    // but maybe cause bad performance. A good practice is accessing the one-to-many relations 
+    // in a session/tx boundary)
+    //
     // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "cargo_id")
     // TODO [Clean Code] Index this is in leg_index
     // Hibernate issue:
     // Hibernate does not persist the order of the list element when saving into db.
-    // The `OrderColumn` persist the position of list ele in db.
+    // The `OrderColumn` will persist the position of list elements in db.
     @OrderColumn(name = "leg_index")
-    // The `OrderBy` ensures the order of list element in mem.
-    @OrderBy("loadTime")
+    // The `OrderBy` only ensures the order of list elements in memory. Only `@OrderBy("loadTime")`
+    // is added some tests are still failed under WildFly/Hibernate.
+    // @OrderBy("loadTime")
     @Size(min = 1)
     @NotEmpty(message = "Legs must not be empty")
     private List<Leg> legs = Collections.emptyList();
@@ -148,8 +153,8 @@ public class Itinerary implements Serializable {
         // return other != null && legs.equals(other.legs);
         //
         // Hibernate issue:
-        // When comparing a list in an entity, it is also a proxy class in runtime.
-        // Use a copyOf to compare using the contained items.
+        // When comparing a `List` type property of an entity, it is also a proxy class in runtime.
+        // Use a `copyOf` to compare using the contained items temporally.
         return other != null && Objects.equals(List.copyOf(this.legs), List.copyOf(other.legs));
     }
 
