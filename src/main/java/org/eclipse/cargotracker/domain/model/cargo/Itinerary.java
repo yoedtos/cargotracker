@@ -25,8 +25,8 @@ public class Itinerary implements Serializable {
     // The `orphanRemoval = true` option will causes a `all-delete-orphan` exception under
     // WildFly/Hibernate.
     // (There is a famous lazy initialization exception you could encounter WildFly/Hibernate.
-    // The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception 
-    // but maybe cause bad performance. A good practice is accessing the one-to-many relations 
+    // The `fetch = FetchType.EAGER` fixes the Hibernate lazy initialization exception
+    // but maybe cause bad performance. A good practice is accessing the one-to-many relations
     // in a session/tx boundary)
     //
     // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
