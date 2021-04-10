@@ -19,9 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v1
         with:
-          distribution: 'zulu'
           java-version: 11
 
       - name: Start up databases via Docker Compose
