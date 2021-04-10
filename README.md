@@ -8,23 +8,20 @@
 ![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
 
 > **This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features planned to sync to the upstream project is in progress.**
-> 
 
+> For the detailed introduction to this project, go to the original project website: https://eclipse-ee4j.github.io/cargotracker/.
 
+Follow the following steps to try it on your local system.
 
-> For the detailed  introduction to  this project, go to the original project website:  https://eclipse-ee4j.github.io/cargotracker/.
-
-Follow the following steps to try it in your local system.
-
-## Building  the project
-
-### Prerequisites
+## Prerequisites
 
 * Java 11
 * Apache Maven 3.8.1
 * Git
 * Docker
 * [Payara 5](https://www.payara.fish/downloads/) or [WildFly](https://www.wildfly.org)
+
+## Building and Running the Application
 
 ### Preparing a Running Postgres Database
 
