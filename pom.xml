@@ -63,22 +63,22 @@
         <!-- Payara server -->
         <payara.version>5.2021.2</payara.version>
         <arquillian-payara.version>2.4.1</arquillian-payara.version>
+        <tyrus-client.version>1.17</tyrus-client.version>
 
         <!-- Wildfly server -->
-        <wildfly.version>22.0.0.Final</wildfly.version>
+        <wildfly.version>23.0.0.Final</wildfly.version>
         <wildfly-maven-plugin.version>2.1.0.Beta1</wildfly-maven-plugin.version>
         <wildfly-arquillian.version>3.0.1.Final</wildfly-arquillian.version>
         <!-- websockets-jsr and resteasy for client, aligned with Wildfly version. -->
         <undertow-websockets-jsr.version>2.2.3.Final</undertow-websockets-jsr.version>
         <resteasy.version>3.14.0.Final</resteasy.version>
+        <jackson.version>2.11.3</jackson.version>
 
         <!-- Application properties -->
         <webapp.databaseTempDir>/tmp</webapp.databaseTempDir>
         <webapp.graphTraversalUrl>
             http://localhost:8080/cargo-tracker/rest/graph-traversal/shortest-path
         </webapp.graphTraversalUrl>
-        <jackson.version>2.11.3</jackson.version>
-        <tyrus-client.version>1.17</tyrus-client.version>
     </properties>
 
     <dependencyManagement>
