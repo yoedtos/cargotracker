@@ -21,7 +21,7 @@ import java.util.List;
 @Path("/graph-traversal")
 public class GraphTraversalService {
 
-    private static final long ONE_MIN_MS = 1000 * 60;
+    private static final long ONE_MIN_MS = 1000L * 60;
     private static final long ONE_DAY_MS = ONE_MIN_MS * 60 * 24;
     private final SecureRandom random = new SecureRandom();
     @Inject private GraphDao dao;
