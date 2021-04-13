@@ -21,8 +21,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: "11.0.7"
-
+          java-version: "11.0.6"
+      - run: java -version
       - name: Start up databases via Docker Compose
         run: |
           docker-compose up -d postgres
