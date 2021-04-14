@@ -77,7 +77,7 @@ mvn -Ppayara -DskipTests=false test
 ```
 > I also added configuration of running tests on Payara Embedded and Payara Micro adapters, but they failed. See [the issues](https://github.com/payara/ecosystem-support/issues/created_by/hantsy) I reported on Payara issue tracker.
 
-###  Testing with WildFly 
+###  Testing with WildFly Remote Adapter
 
 Getting the latest WildFly distribution from [the official WildFly website](https://www.wildfly.org).
 
@@ -94,10 +94,18 @@ Follow the [WildFly Admin Guide](https://docs.wildfly.org/23/Admin_Guide.html#ad
 Now for running the tests against WildFly:
 
 ```shell script
+mvn clean verify -Parq-wildfly-remote -DskipTests=false
+```
+
+###  Testing with WildFly Managed Adaper
+
+Run Arquillian tests against WildFly Managed Adaper.
+
+```shell script
 mvn clean verify -Parq-wildfly-managed -DskipTests=false
 ```
 
-###  Testing with WildFly Embedded
+###  Testing with WildFly Embedded Adaper
 
 Run the following command to run testing codes on an embedded WildFly.
 
