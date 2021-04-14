@@ -374,8 +374,7 @@
         </profile>
         <profile>
             <id>wildfly</id>
-            <properties>
-            </properties>
+            <properties></properties>
             <dependencies>
                 <dependency>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -423,9 +422,7 @@
                                 </goals>
                                 <configuration>
                                     <sources>
-                                        <source>
-                                            src/main/java-wildfly
-                                        </source>
+                                        <source>src/main/java-wildfly</source>
                                     </sources>
                                 </configuration>
                             </execution>
@@ -917,14 +914,14 @@
                 <jacoco.version>0.8.6</jacoco.version>
                 <arquillian-jacoco.version>1.1.0</arquillian-jacoco.version>
             </properties>
-           <dependencies>
-               <dependency>
-                  <groupId>org.jboss.arquillian.extension</groupId>
-                  <artifactId>arquillian-jacoco-with-asm</artifactId>
-                  <version>${arquillian-jacoco.version}</version>
-                  <scope>test</scope>
-               </dependency>
-            </dependencies>       
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.arquillian.extension</groupId>
+                    <artifactId>arquillian-jacoco-with-asm</artifactId>
+                    <version>${arquillian-jacoco.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
