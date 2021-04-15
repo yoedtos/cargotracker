@@ -46,14 +46,17 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run integration test with -Parq-wildfly-managed
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          mvn clean verify -Parq-wildfly-managed,wildfly,coverage jacoco:report \
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.login=$SONAR_TOKEN \
-          -Dsonar.organization=hantsy \
-          -Dsonar.projectKey=hantsy_cargotracker \
-          -Dsonar.coverage.exclusions=**/dto/*
+        run: mvn clean verify -Parq-wildfly-managed,wildfly
+
+#      - name: Run integration test with -Parq-wildfly-managed
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#        run: |
+#          mvn clean verify -Parq-wildfly-managed,wildfly,coverage jacoco:report \
+#          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+#          -Dsonar.host.url=https://sonarcloud.io \
+#          -Dsonar.login=$SONAR_TOKEN \
+#          -Dsonar.organization=hantsy \
+#          -Dsonar.projectKey=hantsy_cargotracker \
+#          -Dsonar.coverage.exclusions=**/dto/*
