@@ -289,8 +289,8 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven-failsafe-plugin.version}</version>
                 <configuration>
-                    <forkCount>1</forkCount>
-                    <reuseForks>false</reuseForks>
+                    <!--<forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>-->
                     <skipITs>${skipTests}</skipITs>
                     <includes>
                         <include>**/*Test.java</include>
