@@ -2,8 +2,9 @@
 
 ![compile and build](https://github.com/hantsy/cargotracker/workflows/build/badge.svg)
 ![Integration Test with Arquillian Payara Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-managed/badge.svg)
-![Integration Test with Arquillian Payara Embedded Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-embedded/badge.svg)
-![Integration Test with Arquillian Payara Micro Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-payara-micro/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hantsy_cargotracker&metric=alert_status)](https://sonarcloud.io/dashboard?id=hantsy_cargotracker)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=hantsy_cargotracker&metric=coverage)](https://sonarcloud.io/dashboard?id=hantsy_cargotracker)
+
 ![Integration Test with Arquillian WildFly Managed Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-managed/badge.svg)
 ![Integration Test with Arquillian WildFly Embedded Container](https://github.com/hantsy/cargotracker/workflows/it-with-arq-wildfly-embedded/badge.svg)
 
