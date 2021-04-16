@@ -22,11 +22,11 @@ jobs:
 #        with:
 #          version: '11'
 #          architecture: x64
-      - name: Set up JDK
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'zulu'
-          java-version: '11'
+#      - name: Set up JDK
+#        uses: actions/setup-java@v2
+#        with:
+#          distribution: 'zulu'
+#          java-version: '11'
 #       - run: |
 #           download_url="https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.10_9.tar.gz"
 #           wget -O $RUNNER_TEMP/java_package.tar.gz $download_url
@@ -36,6 +36,15 @@ jobs:
 #           jdkFile: ${{ runner.temp }}/java_package.tar.gz
 #           java-version: '11.0.0'
 #           architecture: x64
+      # Install SDKMAN:
+      - run: |
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          # Install Java 11:
+          sdk install java `sdk list java | grep -E "11.[0-9]*.[0-9]*-zulu" | head -1 | awk '{print $NF}'`
+          # Set JAVA_HOME:
+          export JAVA_HOME=$HOME/.sdkman/candidates/java/current
+
       - run: java -version
       - name: Start up databases via Docker Compose
         run: |
