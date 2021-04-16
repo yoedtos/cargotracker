@@ -18,11 +18,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Set up JDK
-        uses: actions/setup-java@v1
+      - uses: AdoptOpenJDK/install-jdk@v1
         with:
-          #distribution: 'zulu'
-          java-version: 11
+          version: '11'
+          architecture: x64
+#      - name: Set up JDK
+#        uses: actions/setup-java@v1
+#        with:
+#          #distribution: 'zulu'
+#          java-version: 11
 #       - run: |
 #           download_url="https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.10_9.tar.gz"
 #           wget -O $RUNNER_TEMP/java_package.tar.gz $download_url
