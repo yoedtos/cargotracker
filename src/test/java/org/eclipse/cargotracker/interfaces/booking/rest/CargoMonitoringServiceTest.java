@@ -79,14 +79,14 @@ public class CargoMonitoringServiceTest {
     }
 
     @Test
-    public void testGetAllPosts() throws Exception {
-        LOGGER.log(Level.INFO, " Running test:: CargoMonitoringServiceTest#testGetAllPosts ... ");
-        final WebTarget getAllPostsTarget =
+    public void testCargoStatus() throws Exception {
+        LOGGER.log(Level.INFO, " Running test:: CargoMonitoringServiceTest#testCargoStatus ... ");
+        final WebTarget getCargoStatus =
                 client.target(new URL(base, "rest/cargo").toExternalForm());
 
         // Response is an autocloseable resource.
         try (final Response getAllPostsResponse =
-                getAllPostsTarget.request().accept(MediaType.APPLICATION_JSON).get()) {
+                getCargoStatus.request().accept(MediaType.APPLICATION_JSON).get()) {
             assertThat(getAllPostsResponse.getStatus()).isEqualTo(200);
             // TODO: use POJO to assert the response body.
         }
