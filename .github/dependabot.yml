@@ -16,7 +16,8 @@ updates:
       # Wildcards match zero or more arbitrary characters
       #- dependency-name: "aws*"
       # Ignore some updates to the 'resteasy' package
-      - dependency-name: "resteasy"
+      - dependency-name: "jakarta.platform:jakarta.jakartaee-api"
         # Ignore only new versions for 4.x
-        versions: [ "3.x, 4.x" ]
+        versions: [ "9.x" ]
+        update-types: minor
           
