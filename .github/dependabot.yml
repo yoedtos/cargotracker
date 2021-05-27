@@ -20,4 +20,7 @@ updates:
         # Ignore only new versions for 4.x
         versions: [ "9.x" ]
         update-types: minor
+      - dependency-name: "org.glassfish.jaxb:jaxb-runtime"
+        versions: [ "3.x" ]
+        update-types: minor
           
