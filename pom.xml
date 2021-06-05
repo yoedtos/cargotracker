@@ -74,6 +74,12 @@
         <resteasy.version>3.14.0.Final</resteasy.version>
         <jackson.version>2.11.3</jackson.version>
 
+        <!-- OpenLiberty server -->
+        <liberty.runtime.version>21.0.0.5</liberty.runtime.version>
+        <liberty-maven-plugin.version>3.3.4</liberty-maven-plugin.version>
+        <arquillian-liberty.version>1.0.8</arquillian-liberty.version>
+        <cxf.version>3.4.3</cxf.version>
+
         <!-- Application properties -->
         <webapp.databaseTempDir>/tmp</webapp.databaseTempDir>
         <webapp.graphTraversalUrl>
@@ -89,6 +95,13 @@
                 <artifactId>jakarta.jakartaee-api</artifactId>
                 <version>${jakartaee-api.version}</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>42.2.20</version>
+                <scope>runtime</scope>
             </dependency>
 
             <!-- Arquillian Bill Of Management used to reduce collision between testing
@@ -164,8 +177,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.20</version>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- Required by Java 9+ -->
@@ -462,6 +473,83 @@
                             <!--<id>wildfly-svr</id> -->
 
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>openliberty</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/DatabaseSetup.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>copy-persistenceXml</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <overwrite>true</overwrite>
+                                    <outputDirectory>${basedir}/target/classes/META-INF</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-openliberty/</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven-dependency-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.postgresql</groupId>
+                                    <artifactId>postgresql</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/liberty/wlp/usr/shared/resources</outputDirectory>
+                        </configuration>
+                    </plugin>
+                    <!-- Enable liberty-maven-plugin -->
+                    <plugin>
+                        <groupId>io.openliberty.tools</groupId>
+                        <artifactId>liberty-maven-plugin</artifactId>
+                        <version>${liberty-maven-plugin.version}</version>
                     </plugin>
                 </plugins>
             </build>
