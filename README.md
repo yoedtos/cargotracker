@@ -10,11 +10,19 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=hantsy_cargotracker&metric=coverage)](https://sonarcloud.io/dashboard?id=hantsy_cargotracker)
 
 
-> **This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features planned to sync to the upstream project is in progress.**
+> **This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features are synchronized to the upstream project .**
+
+There are some key difference comparing to the upstream project.
+
+* Utilize Docker to run a Postgres Database in both development and production to erase the risk brought by different enviroments.
+* Fully support running the application on WildFly, and aslo allow you run testing codes against varied WildFly adapters.
+* The project *pom.xml* file includes fine-grained Maven profille configurations for varied Arquillian adapters, which is derived from the [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate).
+* Add a plenty of testing codes to cover more use cases.
+* Analyse code quality at every build in the Github actions workflow, eg. code coverage report via Jacoco, SonarCloud analysis report.
 
 > For the detailed introduction to this project, go to the original project website: https://eclipse-ee4j.github.io/cargotracker/.
 
-Follow the following steps to try it on your local system.
+Follow the following steps to build and run the applicaiton on your local system.
 
 ## Prerequisites
 
@@ -22,23 +30,23 @@ Follow the following steps to try it on your local system.
 * Apache Maven 3.8.1
 * Git
 * Docker
-* [Payara 5](https://www.payara.fish/downloads/) or [WildFly](https://www.wildfly.org)
+* A Jakarta EE 8 compatible application server
+  * [Payara 5](https://www.payara.fish/downloads/) 
+  * [WildFly 23](https://www.wildfly.org)
 
 ## Building and Running the Application
 
-### Preparing a Running Postgres Database
-
-In this project, we use Postgres as an example.
+### Running PostgresSQL Database
 
 There is a *docker-compose.yaml* file available in the project root folder.
 
-Switch to the project root folder, and run  the following command to start a Postgres instance in Docker  container.
+In your terminal, switch to the project root folder, and run the following command to start a Postgres instance in Docker container.
 
 ```bash
 docker-compose up postgres
 ```
 
-### Run Application on Payara 5
+### Payara 5
 
 Run the following command to run the application on Payara 5 using cargo maven plugin.
 
@@ -47,7 +55,7 @@ mvn clean package cargo:run
 ```
 Open your browser, go to http://localhost:8080/cargo-tracker
 
-### Run Application on WildFly 
+### WildFly 
 
 Run the following command to run the application on WildFly  using the official WildFly maven plugin.
 
@@ -59,9 +67,9 @@ Open your browser, go to http://localhost:8080/cargo-tracker
 
 ## Exploring the testing codes
 
-Cargo Tracker's testing is done using JUnit and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against various adapters.
+Cargo Tracker's testing is done using JUnit and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against varied adapters.
 
-### Testing Locally with Payara
+### Payara Remote Adapter
 
 For testing locally you will first need to run a Payara 5 server.
 
@@ -80,7 +88,7 @@ mvn -Ppayara -DskipTests=false test
 ```
 > I also added configuration of running tests on Payara Embedded and Payara Micro adapters, but they failed. See [the issues](https://github.com/payara/ecosystem-support/issues/created_by/hantsy) I reported on Payara issue tracker.
 
-###  Testing with WildFly Remote Adapter
+###  WildFly Remote Adapter
 
 Getting the latest WildFly distribution from [the official WildFly website](https://www.wildfly.org).
 
@@ -100,7 +108,7 @@ Now for running the tests against WildFly:
 mvn clean verify -Parq-wildfly-remote -DskipTests=false
 ```
 
-###  Testing with WildFly Managed Adaper
+###  WildFly Managed Adaper
 
 Run Arquillian tests against WildFly Managed Adaper.
 
@@ -108,7 +116,7 @@ Run Arquillian tests against WildFly Managed Adaper.
 mvn clean verify -Parq-wildfly-managed -DskipTests=false
 ```
 
-###  Testing with WildFly Embedded Adaper
+###  WildFly Embedded Adaper
 
 Run the following command to run testing codes on an embedded WildFly.
 

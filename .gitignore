@@ -7,3 +7,5 @@ target
 *.iml
 nb*
 data
+cargo-tracker-data/
+cargo-tracker-test-data/
