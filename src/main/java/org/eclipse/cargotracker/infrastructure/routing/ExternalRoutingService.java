@@ -30,13 +30,15 @@ public class ExternalRoutingService implements RoutingService {
 
     private static final Logger LOGGER = Logger.getLogger(ExternalRoutingService.class.getName());
 
-    private final LocationRepository locationRepository;
+    @Inject private LocationRepository locationRepository;
 
-    private final VoyageRepository voyageRepository;
+    @Inject private VoyageRepository voyageRepository;
 
-    private final GraphTraversalResourceClient graphTraversalResource;
+    @Inject private GraphTraversalResourceClient graphTraversalResource;
 
-    @Inject
+    // reserved by CDI.
+    public ExternalRoutingService() {}
+
     public ExternalRoutingService(
             LocationRepository locationRepository,
             VoyageRepository voyageRepository,
