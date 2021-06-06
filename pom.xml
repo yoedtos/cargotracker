@@ -477,6 +477,10 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- use maven liberty plugin to run this application on OpenLiberty:
+            mvn clean compile liberty:create dependency:copy liberty:run -Popenliberty -Dmaven.test.skip=true
+        -->
         <profile>
             <id>openliberty</id>
             <dependencies>
@@ -493,11 +497,33 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
                             <excludes>
+                                <exclude>org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java</exclude>
                                 <exclude>**/JmsResourcesSetup.*</exclude>
                                 <exclude>**/DatabaseSetup.*</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
+                    <!--
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/main/java-openliberty</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    -->
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
                         <version>3.0.0</version>
