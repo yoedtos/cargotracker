@@ -20,9 +20,28 @@
         generate an encoded password using bin/securityUtility encode and add it in the password attribute of the user element.
         Then uncomment the user element. -->
     <basicRegistry id="basic" realm="BasicRealm">
-        <!-- <user name="yourUserName" password="" />  -->
+        <user name="bob" password="bobpwd"/>
     </basicRegistry>
 
+    <!-- batch job requires a batchAdmin role to start -->
+    <!-- https://www.ibm.com/docs/en/was-liberty/nd?topic=liberty-securing-batch-environment -->
+    <authorization-roles id="com.ibm.ws.batch">
+        <security-role name="batchAdmin">
+<!--            <user name="bob"/>-->
+            <special-subject type="EVERYONE" />
+        </security-role>
+    </authorization-roles>
+
+    <webApplication name="cargo-tracker" location="cargo-tracker.war"  contextRoot="/cargo-tracker">
+        <application-bnd>
+            <security-role name="batchAdmin">
+                <user name="bob" />
+                <run-as userid="bob"/>
+            </security-role>
+        </application-bnd>
+    </webApplication>
+
+    <httpSession idLength="49" />
     <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
     <httpEndpoint id="defaultHttpEndpoint"
                   httpPort="9080"
@@ -39,19 +58,19 @@
         <queue id="DeliveredCargoQueue"/>
     </messagingEngine>
 
-    <jmsQueue id="jms/MisdirectedCargoQueue" jndiName="java:app/jms/MisdirectedCargoQueue">
+    <jmsQueue id="jms/MisdirectedCargoQueue" jndiName="jms/MisdirectedCargoQueue">
         <properties.wasJms queueName="MisdirectedCargoQueue"/>
     </jmsQueue>
-    <jmsQueue id="jms/CargoHandledQueue" jndiName="java:app/jms/CargoHandledQueue">
+    <jmsQueue id="jms/CargoHandledQueue" jndiName="jms/CargoHandledQueue">
         <properties.wasJms queueName="CargoHandledQueue"/>
     </jmsQueue>
-    <jmsQueue id="jms/RejectedRegistrationAttemptsQueue" jndiName="java:app/jms/RejectedRegistrationAttemptsQueue">
+    <jmsQueue id="jms/RejectedRegistrationAttemptsQueue" jndiName="jms/RejectedRegistrationAttemptsQueue">
         <properties.wasJms queueName="RejectedRegistrationAttemptsQueue"/>
     </jmsQueue>
-    <jmsQueue id="jms/HandlingEventRegistrationAttemptQueue" jndiName="java:app/jms/HandlingEventRegistrationAttemptQueue">
+    <jmsQueue id="jms/HandlingEventRegistrationAttemptQueue" jndiName="jms/HandlingEventRegistrationAttemptQueue">
         <properties.wasJms queueName="HandlingEventRegistrationAttemptQueue"/>
     </jmsQueue>
-    <jmsQueue id="jms/DeliveredCargoQueue" jndiName="java:app/jms/DeliveredCargoQueue">
+    <jmsQueue id="jms/DeliveredCargoQueue" jndiName="jms/DeliveredCargoQueue">
         <properties.wasJms queueName="DeliveredCargoQueue"/>
     </jmsQueue>
 

@@ -493,10 +493,46 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
                             <excludes>
-                                <exclude>**/DatabaseSetup.java</exclude>
+                                <exclude>**/JmsResourcesSetup.*</exclude>
+                                <exclude>**/DatabaseSetup.*</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>replace-source-file</id>
+                                <phase>process-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <move file="src/main/java/org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java"
+                                              tofile="src/main/java/org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java.moved"/>
+                                        <copy file="src/main/java-openliberty/org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java"
+                                              todir="src/main/java/org/eclipse/cargotracker/infrastructure/messaging/"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>restore-source-file</id>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <target>
+                                        <move file="src/main/java/org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java.moved"
+                                              tofile="src/main/java/org/eclipse/cargotracker/infrastructure/messaging/JmsQueueNames.java"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
@@ -542,7 +578,8 @@
                                     <overWrite>false</overWrite>
                                 </artifactItem>
                             </artifactItems>
-                            <outputDirectory>${project.build.directory}/liberty/wlp/usr/shared/resources</outputDirectory>
+                            <outputDirectory>${project.build.directory}/liberty/wlp/usr/shared/resources
+                            </outputDirectory>
                         </configuration>
                     </plugin>
                     <!-- Enable liberty-maven-plugin -->
@@ -1049,26 +1086,26 @@
                                     <goal>report</goal>
                                 </goals>
                             </execution>
-<!--                            <execution>
-                                <id>default-check</id>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <rule>
-                                            <element>BUNDLE</element>
-                                            <limits>
-                                                <limit>
-                                                    <counter>COMPLEXITY</counter>
-                                                    <value>COVEREDRATIO</value>
-                                                    <minimum>0.60</minimum>
-                                                </limit>
-                                            </limits>
-                                        </rule>
-                                    </rules>
-                                </configuration>
-                            </execution>-->
+                            <!--                            <execution>
+                                                            <id>default-check</id>
+                                                            <goals>
+                                                                <goal>check</goal>
+                                                            </goals>
+                                                            <configuration>
+                                                                <rules>
+                                                                    <rule>
+                                                                        <element>BUNDLE</element>
+                                                                        <limits>
+                                                                            <limit>
+                                                                                <counter>COMPLEXITY</counter>
+                                                                                <value>COVEREDRATIO</value>
+                                                                                <minimum>0.60</minimum>
+                                                                            </limit>
+                                                                        </limits>
+                                                                    </rule>
+                                                                </rules>
+                                                            </configuration>
+                                                        </execution>-->
                         </executions>
                     </plugin>
                 </plugins>
