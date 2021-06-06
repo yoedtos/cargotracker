@@ -111,7 +111,8 @@ public class ApplicationEventsTest {
         addInfraBase(war);
         // addInfraPersistence(war);
         // addInfraMessaging(war);
-        war.addClass(JmsResourcesSetup.class).addClass(JmsQueueNames.class)
+        war.addClass(JmsResourcesSetup.class)
+                .addClass(JmsQueueNames.class)
                 .addClass(CargoHandledConsumer.class)
                 .addClass(HandlingEventRegistrationAttemptConsumer.class);
         addApplicationBase(war);
