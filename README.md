@@ -10,15 +10,15 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=hantsy_cargotracker&metric=coverage)](https://sonarcloud.io/dashboard?id=hantsy_cargotracker)
 
 
-> **This is my personal fork of [eclipse-ee4j/cargotracker](https://github.com/eclipse-ee4j/cargotracker), some features are synchronized to the upstream project .**
+> **This is my personal fork of [Eclipse EE4J CargoTracker](https://github.com/eclipse-ee4j/cargotracker), some work are synchronized to the upstream project.**
 
 There are some key difference comparing to the upstream project.
 
 * Utilize Docker to run a Postgres Database in both development and production to erase the risk brought by different enviroments.
-* Fully support running the application on WildFly, and aslo allow you run testing codes against varied WildFly adapters.
-* The project *pom.xml* file includes fine-grained Maven profille configurations for varied Arquillian adapters, which is derived from the [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate).
+* Fully support running the application on WildFly, and aslo add configuratoins to run testing codes against varied WildFly Arquillian adapters.
+* The project *pom.xml* file includes multiple fine-grained Maven profille based configurations for varied Arquillian adapters, which is derived from [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate).
 * Add a plenty of testing codes to cover more use cases.
-* Analyse code quality at every build in the Github actions workflow, eg. code coverage report via Jacoco, SonarCloud analysis report.
+* Analyse code quality automaticially at every build defined in the Github actions workflow, eg. code coverage report via Jacoco, SonarCloud analysis report.
 
 > For the detailed introduction to this project, go to the original project website: https://eclipse-ee4j.github.io/cargotracker/.
 
@@ -34,7 +34,7 @@ Follow the following steps to build and run the applicaiton on your local system
   * [Payara 5](https://www.payara.fish/downloads/) 
   * [WildFly 23](https://www.wildfly.org)
 
-## Building and Running the Application
+## Building and Running CargoTracker Application
 
 ### Running PostgresSQL Database
 
@@ -57,7 +57,7 @@ Open your browser, go to http://localhost:8080/cargo-tracker
 
 ### WildFly 
 
-Run the following command to run the application on WildFly  using the official WildFly maven plugin.
+Run the following command to run the application on WildFly using the official WildFly maven plugin.
 
 ```bash
 mvn clean package wildfly:run -Pwildfly
