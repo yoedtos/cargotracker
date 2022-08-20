@@ -1,22 +1,22 @@
 package org.eclipse.cargotracker.interfaces.booking.web;
 
+import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.LocationDto;
+import org.omnifaces.util.Messages;
+
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.Conversation;
+import javax.enterprise.context.ConversationScoped;
+import javax.faces.context.FacesContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
-import javax.faces.flow.FlowScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
-import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.Location;
-import org.primefaces.PrimeFaces;
 
 @Named
-@FlowScoped("booking")
+@ConversationScoped
 public class Booking implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -24,18 +24,20 @@ public class Booking implements Serializable {
     private static final long MIN_JOURNEY_DURATION = 1; // Journey should be 1 day minimum.
 
     private LocalDate today = null;
-    private List<Location> locations;
+    private List<LocationDto> locations;
 
     private String originUnlocode;
     private String originName;
     private String destinationName;
     private String destinationUnlocode;
     private LocalDate arrivalDeadline;
-
-    private boolean bookable = false;
     private long duration = -1;
 
     @Inject private BookingServiceFacade bookingServiceFacade;
+
+    @Inject private Conversation conversation;
+
+    @Inject private FacesContext facesContext;
 
     @PostConstruct
     public void init() {
@@ -43,30 +45,14 @@ public class Booking implements Serializable {
         locations = bookingServiceFacade.listShippingLocations();
     }
 
-    public List<Location> getLocations() {
-        List<Location> filteredLocations = new ArrayList<>();
-        String locationToRemove = null;
-
-        // TODO [Jakarta EE 8] Use injection instead?
-        if (FacesContext.getCurrentInstance()
-                .getViewRoot()
-                .getViewId()
-                .endsWith("destination.xhtml")) {
-            // In the destination menu, origin can't be selected.
-            locationToRemove = originUnlocode;
-        } else { // Vice-versa.
-            if (destinationUnlocode != null) {
-                locationToRemove = destinationUnlocode;
-            }
+    public void startConversation() {
+        if (!facesContext.isPostback() && conversation.isTransient()) {
+            conversation.begin();
         }
+    }
 
-        for (Location location : locations) {
-            if (!location.getUnLocode().equalsIgnoreCase(locationToRemove)) {
-                filteredLocations.add(location);
-            }
-        }
-
-        return filteredLocations;
+    public List<LocationDto> getLocations() {
+        return locations;
     }
 
     public String getOriginUnlocode() {
@@ -75,7 +61,7 @@ public class Booking implements Serializable {
 
     public void setOriginUnlocode(String originUnlocode) {
         this.originUnlocode = originUnlocode;
-        for (Location location : locations) {
+        for (LocationDto location : locations) {
             if (location.getUnLocode().equalsIgnoreCase(originUnlocode)) {
                 this.originName = location.getNameOnly();
             }
@@ -92,7 +78,7 @@ public class Booking implements Serializable {
 
     public void setDestinationUnlocode(String destinationUnlocode) {
         this.destinationUnlocode = destinationUnlocode;
-        for (Location location : locations) {
+        for (LocationDto location : locations) {
             if (location.getUnLocode().equalsIgnoreCase(destinationUnlocode)) {
                 destinationName = location.getNameOnly();
             }
@@ -113,46 +99,36 @@ public class Booking implements Serializable {
 
     public void setArrivalDeadline(LocalDate arrivalDeadline) {
         this.arrivalDeadline = arrivalDeadline;
+        this.duration = ChronoUnit.DAYS.between(today, arrivalDeadline);
     }
 
     public long getDuration() {
         return duration;
     }
 
-    public boolean isBookable() {
-        return bookable;
+    public String submit() {
+        if (originUnlocode.equals(destinationUnlocode)) {
+            Messages.addGlobalError("Origin and destination cannot be the same.");
+            return null;
+        }
+        if (duration < MIN_JOURNEY_DURATION) {
+            Messages.addGlobalError("Journey duration must be at least 1 day.");
+            return null;
+        }
+        return "/admin/booking/confirm.xhtml";
     }
 
-    public void deadlineUpdated() {
-        duration = ChronoUnit.DAYS.between(today, arrivalDeadline);
-
-        if (duration >= MIN_JOURNEY_DURATION) {
-            bookable = true;
-        } else {
-            bookable = false;
-        }
-
-        PrimeFaces.current().ajax().update("dateForm:durationPanel");
-        PrimeFaces.current().ajax().update("dateForm:bookBtn");
+    public String back() {
+        return "/admin/booking/booking.xhtml";
     }
 
     public String register() {
-        if (!originUnlocode.equals(destinationUnlocode)) {
-            bookingServiceFacade.bookNewCargo(originUnlocode, destinationUnlocode, arrivalDeadline);
-        } else {
-            // TODO [Jakarta EE 8] See if this can be injected.
-            FacesContext context = FacesContext.getCurrentInstance();
-            // UI now prevents from selecting same origin/destination
-            FacesMessage message = new FacesMessage("Origin and destination cannot be the same.");
-            message.setSeverity(FacesMessage.SEVERITY_ERROR);
-            context.addMessage(null, message);
-            return null;
+        bookingServiceFacade.bookNewCargo(originUnlocode, destinationUnlocode, arrivalDeadline);
+
+        // end the conversation
+        if (!conversation.isTransient()) {
+            conversation.end();
         }
-
-        return "/admin/dashboard.xhtml";
-    }
-
-    public String getReturnValue() {
-        return "/admin/dashboard.xhtml";
+        return "/admin/dashboard.xhtml?faces-redirect=true";
     }
 }

@@ -29,7 +29,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Deployments {
@@ -51,17 +50,6 @@ public class Deployments {
 
     public static void addInfraBase(WebArchive war) {
         war.addPackage(CargoInspected.class.getPackage()).addClass(LoggerProducer.class);
-        try {
-            Class<?> clazz =
-                    Class.forName(
-                            "org.eclipse.cargotracker.infrastructure.routing.client.JacksonObjectMapperContextResolver");
-            war.addClass(clazz);
-        } catch (ClassNotFoundException e) {
-            LOGGER.log(
-                    Level.WARNING,
-                    "ignore this exception on non-WildFly server: {0}",
-                    e.getMessage());
-        }
     }
 
     // Infrastructure layer components.

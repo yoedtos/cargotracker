@@ -7,8 +7,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.interfaces.booking.facade.BookingServiceFacade;
-import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRoute;
-import org.primefaces.PrimeFaces;
+import org.eclipse.cargotracker.interfaces.booking.facade.dto.CargoRouteDto;
 
 /**
  * Handles changing the cargo destination. Operates against a dedicated service facade, and could
@@ -26,7 +25,7 @@ public class ChangeArrivalDeadline implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String trackingId;
-    private CargoRoute cargo;
+    private CargoRouteDto cargo;
     private LocalDate arrivalDeadline;
 
     @Inject private BookingServiceFacade bookingServiceFacade;
@@ -39,7 +38,7 @@ public class ChangeArrivalDeadline implements Serializable {
         this.trackingId = trackingId;
     }
 
-    public CargoRoute getCargo() {
+    public CargoRouteDto getCargo() {
         return cargo;
     }
 
@@ -56,8 +55,8 @@ public class ChangeArrivalDeadline implements Serializable {
         arrivalDeadline = DateUtil.toDate(cargo.getArrivalDeadline());
     }
 
-    public void changeArrivalDeadline() {
+    public String changeArrivalDeadline() {
         bookingServiceFacade.changeDeadline(trackingId, arrivalDeadline);
-        PrimeFaces.current().dialog().closeDynamic("DONE");
+        return "/admin/show.xhtml?faces-redirect=true&trackingId=" + trackingId;
     }
 }

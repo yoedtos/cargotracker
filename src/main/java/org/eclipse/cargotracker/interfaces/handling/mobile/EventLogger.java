@@ -1,17 +1,5 @@
 package org.eclipse.cargotracker.interfaces.handling.mobile;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
-import javax.faces.model.SelectItem;
-import javax.faces.view.ViewScoped;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.transaction.Transactional;
 import org.eclipse.cargotracker.application.ApplicationEvents;
 import org.eclipse.cargotracker.application.util.DateUtil;
 import org.eclipse.cargotracker.domain.model.cargo.Cargo;
@@ -26,7 +14,17 @@ import org.eclipse.cargotracker.domain.model.voyage.Voyage;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageNumber;
 import org.eclipse.cargotracker.domain.model.voyage.VoyageRepository;
 import org.eclipse.cargotracker.interfaces.handling.HandlingEventRegistrationAttempt;
-import org.primefaces.event.FlowEvent;
+import org.omnifaces.util.Messages;
+
+import javax.faces.model.SelectItem;
+import javax.faces.view.ViewScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.transaction.Transactional;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Named
 @ViewScoped
@@ -112,7 +110,6 @@ public class EventLogger implements Serializable {
         return DateUtil.DATE_TIME_FORMAT;
     }
 
-    @PostConstruct
     @Transactional
     public void init() {
         List<Cargo> cargos = cargoRepository.findAll();
@@ -149,28 +146,12 @@ public class EventLogger implements Serializable {
         }
     }
 
-    public String onFlowProcess(FlowEvent event) {
-        if (!validate(event.getOldStep())) {
-            return event.getOldStep();
-        }
-
-        if ("dateTab".equals(event.getNewStep())) {
-            completionTime = LocalDateTime.now();
-        }
-
-        return event.getNewStep();
-    }
-
     private boolean validate(final String step) {
         if ("voyageTab".equals(step)
                 && ("LOAD".equals(eventType) || "UNLOAD".equals(eventType))
                 && voyageNumber == null) {
-            FacesMessage message =
-                    new FacesMessage(
-                            FacesMessage.SEVERITY_ERROR,
-                            "When a cargo is LOADed or UNLOADed a Voyage should be selected, please fix errors to continue.",
-                            "");
-            FacesContext.getCurrentInstance().addMessage(null, message);
+            Messages.addGlobalError(
+                    "When a cargo is LOADed or UNLOADed a Voyage should be selected, please fix errors to continue.");
             return false;
         }
 
@@ -197,6 +178,6 @@ public class EventLogger implements Serializable {
 
         applicationEvents.receivedHandlingEventRegistrationAttempt(attempt);
 
-        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Event submitted", ""));
+        Messages.addGlobalInfo("Event submitted");
     }
 }

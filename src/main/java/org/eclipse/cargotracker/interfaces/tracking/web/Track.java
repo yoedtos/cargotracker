@@ -5,9 +5,8 @@ import org.eclipse.cargotracker.domain.model.cargo.CargoRepository;
 import org.eclipse.cargotracker.domain.model.cargo.TrackingId;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEvent;
 import org.eclipse.cargotracker.domain.model.handling.HandlingEventRepository;
+import org.omnifaces.util.Messages;
 
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -26,7 +25,7 @@ import java.util.List;
  *
  * <p>In some very simplistic cases, it is fine to not use even an adapter.
  */
-@Named("public.track")
+@Named("track")
 @ViewScoped
 public class Track implements Serializable {
 
@@ -69,11 +68,13 @@ public class Track implements Serializable {
                             .getDistinctEventsByCompletionTime();
             this.cargo = new CargoTrackingViewAdapter(cargo, handlingEvents);
         } else {
-            FacesContext context = FacesContext.getCurrentInstance();
-            FacesMessage message =
-                    new FacesMessage("Cargo with tracking ID: " + trackingId + " not found.");
-            message.setSeverity(FacesMessage.SEVERITY_ERROR);
-            context.addMessage(null, message);
+            Messages.addFlashGlobalError("Cargo with tracking ID: {0} not found.", trackingId);
+            //            FacesContext context = FacesContext.getCurrentInstance();
+            //            FacesMessage message =
+            //                    new FacesMessage("Cargo with tracking ID: " + trackingId + " not
+            // found.");
+            //            message.setSeverity(FacesMessage.SEVERITY_ERROR);
+            //            context.addMessage(null, message);
             this.cargo = null;
         }
     }
