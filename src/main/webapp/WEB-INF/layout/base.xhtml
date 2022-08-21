@@ -25,17 +25,7 @@
         <title>CargoTracker - A Jakarta EE blueprint application</title>
     </h:head>
     <h:body>
-        <header class="container">
-            <div class="d-flex justify-content-start my-5">
-                <a href="#{request.contextPath}" class="d-block">
-                    <img src="#{request.contextPath}/resources/images/logo48.png" class="logo"/>
-                </a>
-                <span class="ms-2 fs-3 fw-bold text-dark text-decoration-none">
-                    <ui:insert name="title">Cargo Tracker</ui:insert>
-                </span>
-            </div>
-            <ui:insert name="nav"></ui:insert>
-        </header>
+        <ui:insert name="nav"></ui:insert>
         <main class="container">
             <ui:include src="/WEB-INF/layout/alert.xhtml"></ui:include>
             <ui:insert name="body"></ui:insert>

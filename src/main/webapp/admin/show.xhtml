@@ -1,9 +1,9 @@
 <ui:composition
-        xmlns="http://www.w3.org/1999/xhtml"
-        xmlns:h="http://xmlns.jcp.org/jsf/html"
-        xmlns:f="http://xmlns.jcp.org/jsf/core"
-        xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-        template="/WEB-INF/layout/admin.xhtml">
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:h="http://xmlns.jcp.org/jsf/html"
+    xmlns:f="http://xmlns.jcp.org/jsf/core"
+    xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+    template="/WEB-INF/layout/admin.xhtml">
     <ui:define name="title">Cargo Details</ui:define>
     <ui:define name="metadata">
         <f:metadata>
@@ -11,9 +11,8 @@
             <f:event type="preRenderView" listener="#{cargoDetails.load()}"/>
         </f:metadata>
     </ui:define>
-    <ui:define name="body">
-        <h2 class="my-5 fs-2 fw-bold">Routing Details for Cargo #{cargoDetails.cargo.trackingId}</h2>
-
+    <ui:define name="subtitle">Routing Details for Cargo #{cargoDetails.cargo.trackingId}</ui:define>
+    <ui:define name="content">
         <div class="row mb-5 g-3">
             <div class="col-12 col-md-4 fw-bolder float-right">Origin</div>
             <div class="col-12 col-md-6">#{cargoDetails.cargo.originName} <span
@@ -39,28 +38,28 @@
             <h3 class="mb-2 fs-3 fw-bolder">Itinerary</h3>
             <table class="mb-5 table table-hover">
                 <thead>
-                <tr>
-                    <th>Voyage</th>
-                    <th>Load</th>
-                    <th>Time</th>
-                    <th>UnLoad</th>
-                    <th>Time</th>
-                </tr>
+                    <tr>
+                        <th>Voyage</th>
+                        <th>Load</th>
+                        <th>Time</th>
+                        <th>UnLoad</th>
+                        <th>Time</th>
+                    </tr>
                 </thead>
                 <tbody>
-                <ui:repeat var="leg" value="#{cargoDetails.cargo.legs}">
-                    <tr>
-                        <td>#{leg.voyageNumber}</td>
-                        <td>#{leg.fromName} <br/>
-                            <span class="text-secondary">#{leg.fromUnLocode}</span>
-                        </td>
-                        <td>#{leg.loadTime}</td>
-                        <td>#{leg.toName}<br/>
-                            <span class="text-secondary">#{leg.toUnLocode}</span>
-                        </td>
-                        <td>#{leg.unloadTime}</td>
-                    </tr>
-                </ui:repeat>
+                    <ui:repeat var="leg" value="#{cargoDetails.cargo.legs}">
+                        <tr>
+                            <td>#{leg.voyageNumber}</td>
+                            <td>#{leg.fromName} <br/>
+                                <span class="text-secondary">#{leg.fromUnLocode}</span>
+                            </td>
+                            <td>#{leg.loadTime}</td>
+                            <td>#{leg.toName}<br/>
+                                <span class="text-secondary">#{leg.toUnLocode}</span>
+                            </td>
+                            <td>#{leg.unloadTime}</td>
+                        </tr>
+                    </ui:repeat>
                 </tbody>
             </table>
 

@@ -1,0 +1,14 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:h="http://xmlns.jcp.org/jsf/html">
+    <header class="container">
+        <div class="d-flex justify-content-start align-items-center">
+            <a href="#{request.contextPath}" class="d-block">
+                <img src="#{request.contextPath}/resources/images/logo48.png" class="logo"/>
+            </a>
+            <span class="d-hide d-md-inline-block ms-2 fs-3 fw-bolder text-dark text-decoration-none">
+                <ui:insert name="title">Cargo Tracker</ui:insert>
+            </span>
+        </div>
+    </header>
+</ui:composition>

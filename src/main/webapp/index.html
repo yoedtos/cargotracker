@@ -16,6 +16,7 @@
             rel="stylesheet" type="text/css"/>
     <style>
         body {
+            background-image: url("./resources/images/cargoTug.jpg");
             text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
             box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
         }
@@ -32,17 +33,17 @@
     </style>
 </head>
 
-<body class="d-flex flex-column vh-100 text-white bg-dark">
-<main class="my-auto cover-container d-flex flex-column justify-content-center align-items-center">
-    <h1 class="py-3 fs-1">Cargo Tracker</h1>
-    <a href="https://github.com/eclipse-ee4j/cargotracker/">
+<body class="d-flex flex-column vh-100 text-white bg-image shadow-2-strong">
+<main style="background-color: rgba(0, 0, 0, 0.8);" class=" mask flex-fill cover-container d-flex flex-column justify-content-center align-items-center">
+    <h1 class="my-5 fs-1 fw-bolder">Cargo Tracker</h1>
+    <a href="https://github.com/eclipse-ee4j/cargotracker/" class="mb-2">
         <img src="resources/images/CTlogobadge128.png" class="img-fluid mx-auto d-block"/>
     </a>
-    <h2 class="py-2 fs-3">Applied Domain Driven Design blueprints for Jakarta EE</h2>
-    <div class="my-auto d-flex flex-column flex-md-row justify-content-center">
-        <a class="mx-1 btn btn-outline-light btn-lg" href="public/track.xhtml">Public Tracking Interface</a>
-        <a class="mx-1 btn btn-outline-light btn-lg" href="admin/dashboard.xhtml">Administration Interface</a>
-        <a class="mx-1 btn btn-outline-light btn-lg"
+    <h2 class="mb-5 fs-2">Applied Domain Driven Design blueprints for Jakarta EE</h2>
+    <div class="d-grid gap-3 d-md-flex justify-content-center align-items-center">
+        <a class="btn btn-outline-light btn-lg" href="public/track.xhtml">Public Tracking Interface</a>
+        <a class="btn btn-outline-light btn-lg" href="admin/dashboard.xhtml">Administration Interface</a>
+        <a class="btn btn-outline-light btn-lg"
            href="javascript:void(0)"
            onClick="window.open('event-logger/index.xhtml', 'EventLogger', 'width=320,height=440')">Mobile
             Event Logger</a>
