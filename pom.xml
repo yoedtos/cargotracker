@@ -102,8 +102,8 @@
             </dependency>
 
             <!-- Arquillian Bill Of Management used to reduce collision between testing
-                dependencies. Using a dependency manager we don't need to specify the version
-                of each Arquillian dependency. -->
+            dependencies. Using a dependency manager we don't need to specify the version
+            of each Arquillian dependency. -->
             <dependency>
                 <groupId>org.jboss.arquillian</groupId>
                 <artifactId>arquillian-bom</artifactId>
@@ -192,6 +192,18 @@
             <artifactId>omnifaces</artifactId>
             <version>3.13.1</version>
         </dependency>
+        
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>mvc-auth-commons</artifactId>
+            <version>1.9.2</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>jwks-rsa</artifactId>
+            <version>0.21.2</version>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
@@ -226,7 +238,7 @@
         </dependency>
 
         <!-- Resolvers are needed in the Arquillian tests. This is used for adding
-            all the runtime dependencies inside a testing war. -->
+        all the runtime dependencies inside a testing war. -->
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
@@ -257,6 +269,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -408,7 +423,7 @@
                                  <script>config.cli</script>
                             </scripts>-->
                             <!-- if a wildfly.home property is not present, firstly it will download
-                                a copy of wildfly distribution automatically -->
+                            a copy of wildfly distribution automatically -->
                             <!-- also fetch from jbossHome -->
                             <!-- <jossHome>${env.WILDFLY_HOME}</jbossHome>-->
 
@@ -634,9 +649,9 @@
         <profile>
 
             <!-- An optional Arquillian testing profile that executes tests in your
-                WildFly instance -->
+            WildFly instance -->
             <!-- This profile will start a new WildFly instance, and execute the test,
-                shutting it down when done -->
+            shutting it down when done -->
             <!-- Run with: mvn clean verify -Parq-wildfly-managed -->
             <id>arq-wildfly-managed</id>
             <properties>
@@ -658,7 +673,7 @@
                 <!-- TESTS -->
                 <!-- JAXRS test need the dependency:resteasy-client -->
                 <!-- Import the RestEasy Client and jackson2/json-binding/json-p provider, we use test scope
-                    as we need that for test purposes -->
+                as we need that for test purposes -->
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
@@ -730,7 +745,7 @@
         </profile>
         <profile>
             <!-- An optional Arquillian testing profile that executes tests in a remote
-                WildFly instance -->
+            WildFly instance -->
             <!-- Run with: mvn clean test -Parq-wildfly-remote -->
             <id>arq-wildfly-remote</id>
             <properties>
@@ -790,7 +805,7 @@
         </profile>
         <profile>
             <!-- An optional Arquillian testing profile that executes tests in your
-                WildFly instance -->
+            WildFly instance -->
             <!-- Run with: mvn clean test -Parq-wildfly-embedded -->
             <id>arq-wildfly-embedded</id>
             <properties>
@@ -869,7 +884,7 @@
                                 <JBOSS_HOME>${project.build.directory}/wildfly-${wildfly.version}</JBOSS_HOME>
                             </environmentVariables>
                             <systemPropertyVariables>
-<!--                                <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>-->
+                                <!--                                <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>-->
                                 <serverConfig>standalone-full.xml</serverConfig>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             </systemPropertyVariables>
@@ -918,25 +933,25 @@
                                 </goals>
                             </execution>
                             <!--                            <execution>
-                                                            <id>default-check</id>
-                                                            <goals>
-                                                                <goal>check</goal>
-                                                            </goals>
-                                                            <configuration>
-                                                                <rules>
-                                                                    <rule>
-                                                                        <element>BUNDLE</element>
-                                                                        <limits>
-                                                                            <limit>
-                                                                                <counter>COMPLEXITY</counter>
-                                                                                <value>COVEREDRATIO</value>
-                                                                                <minimum>0.60</minimum>
-                                                                            </limit>
-                                                                        </limits>
-                                                                    </rule>
-                                                                </rules>
-                                                            </configuration>
-                                                        </execution>-->
+                                <id>default-check</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>COMPLEXITY</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.60</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution>-->
                         </executions>
                     </plugin>
                 </plugins>
