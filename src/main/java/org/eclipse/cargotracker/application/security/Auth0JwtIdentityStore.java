@@ -6,7 +6,6 @@ import javax.security.enterprise.identitystore.CredentialValidationResult;
 import javax.security.enterprise.identitystore.IdentityStore;
 
 /**
- *
  * @author hantsy
  */
 @ApplicationScoped

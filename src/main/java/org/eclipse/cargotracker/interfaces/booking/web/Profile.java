@@ -15,17 +15,15 @@ import javax.security.enterprise.SecurityContext;
 import org.eclipse.cargotracker.application.security.Auth0JwtPrincipal;
 
 /**
- *
  * @author hantsy
  */
 @RequestScoped
 @Named("profile")
 public class Profile {
 
-    private final static Logger LOGGER = Logger.getLogger(Profile.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Profile.class.getName());
 
-    @Inject
-    SecurityContext securityContext;
+    @Inject SecurityContext securityContext;
 
     private Map<String, Claim> claims;
 
@@ -41,5 +39,4 @@ public class Profile {
     public Map<String, Claim> getClaims() {
         return claims;
     }
-
 }

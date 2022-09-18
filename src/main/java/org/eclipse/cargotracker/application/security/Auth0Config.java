@@ -33,7 +33,7 @@ public class Auth0Config {
             clientSecret = properties.getProperty("clientSecret");
             issuerUri = properties.getProperty("issuerUri");
             scope = properties.getProperty("scope");
-            
+
             if (scope == null) {
                 scope = DEFAULT_SCOPE;
             }
@@ -45,13 +45,7 @@ public class Auth0Config {
             LOGGER.log(
                     Level.INFO,
                     "domain: {0}, clientId: {1}, clientSecret:{2}, issuerUri: {3}, scope: {4}",
-                    new Object[]{
-                        domain,
-                        clientId,
-                        clientSecret,
-                        issuerUri,
-                        scope
-                    });
+                    new Object[] {domain, clientId, clientSecret, issuerUri, scope});
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to load auth0.properties", e);
         }
@@ -76,5 +70,4 @@ public class Auth0Config {
     public String getScope() {
         return scope;
     }
-
 }

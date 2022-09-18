@@ -7,7 +7,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
 /**
- *
  * @author hantsy
  */
 @ApplicationScoped
@@ -16,7 +15,8 @@ public class Auth0AuthenticationProvider {
     @Produces
     public AuthenticationController authenticationController(Auth0Config config) {
         JwkProvider jwkProvider = new JwkProviderBuilder(config.getDomain()).build();
-        return AuthenticationController.newBuilder(config.getDomain(), config.getClientId(), config.getClientSecret())
+        return AuthenticationController.newBuilder(
+                        config.getDomain(), config.getClientId(), config.getClientSecret())
                 .withJwkProvider(jwkProvider)
                 .build();
     }

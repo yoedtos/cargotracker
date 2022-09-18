@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.cargotracker.application.security.Auth0Config;
 
 /**
- *
  * @author hantsy
  */
 @WebServlet(urlPatterns = "/logout")
@@ -23,7 +22,8 @@ public class LogoutServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(final HttpServletRequest request, final HttpServletResponse response)
+            throws ServletException, IOException {
         clearSession(request);
         response.sendRedirect(getLogoutUrl(request));
     }
@@ -39,8 +39,7 @@ public class LogoutServlet extends HttpServlet {
         int port = request.getServerPort();
         String scheme = request.getScheme();
 
-        if (("http".equals(scheme) && port != 80) ||
-                ("https".equals(scheme) && port != 443)) {
+        if (("http".equals(scheme) && port != 80) || ("https".equals(scheme) && port != 443)) {
             returnUrl += ":" + port;
         }
 
@@ -48,12 +47,10 @@ public class LogoutServlet extends HttpServlet {
 
         // Build logout URL like:
         // https://{YOUR-DOMAIN}/v2/logout?client_id={YOUR-CLIENT-ID}&returnTo=http://localhost:3000/
-        String logoutUrl = String.format(
-                "https://%s/v2/logout?client_id=%s&returnTo=%s",
-                config.getDomain(),
-                config.getClientId(),
-                returnUrl
-        );
+        String logoutUrl =
+                String.format(
+                        "https://%s/v2/logout?client_id=%s&returnTo=%s",
+                        config.getDomain(), config.getClientId(), returnUrl);
 
         return logoutUrl;
     }
