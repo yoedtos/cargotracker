@@ -6,6 +6,8 @@ package org.eclipse.cargotracker.interfaces.booking.web;
 
 import com.auth0.jwt.interfaces.Claim;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -20,12 +22,15 @@ import org.eclipse.cargotracker.application.security.Auth0JwtPrincipal;
 @Named("profile")
 public class Profile {
 
+    private final static Logger LOGGER = Logger.getLogger(Profile.class.getName());
+
     @Inject
     SecurityContext securityContext;
 
     private Map<String, Claim> claims;
 
-    public void init() {
+    public void load() {
+        LOGGER.log(Level.FINEST, "get profile info.");
         var principal = securityContext.getCallerPrincipal();
         if (principal instanceof Auth0JwtPrincipal) {
             var jwtPrincipal = (Auth0JwtPrincipal) principal;
