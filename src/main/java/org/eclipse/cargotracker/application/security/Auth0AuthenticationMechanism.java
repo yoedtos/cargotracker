@@ -3,6 +3,8 @@ package org.eclipse.cargotracker.application.security;
 import com.auth0.AuthenticationController;
 import com.auth0.IdentityVerificationException;
 import com.auth0.Tokens;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.security.enterprise.AuthenticationException;
@@ -22,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 @ApplicationScoped
 @AutoApplySession
 public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism {
+    private final static Logger LOGGER = Logger.getLogger(Auth0AuthenticationMechanism.class.getName());
+
     private final AuthenticationController authenticationController;
     private final IdentityStoreHandler identityStoreHandler;
 
@@ -33,8 +37,8 @@ public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism
 
     @Override
     public AuthenticationStatus validateRequest(HttpServletRequest httpServletRequest,
-                                                HttpServletResponse httpServletResponse,
-                                                HttpMessageContext httpMessageContext) throws AuthenticationException {
+            HttpServletResponse httpServletResponse,
+            HttpMessageContext httpMessageContext) throws AuthenticationException {
 
         // Exchange the code for the ID token, and notify container of result.
         if (isCallbackRequest(httpServletRequest)) {
@@ -44,6 +48,7 @@ public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism
                 CredentialValidationResult result = identityStoreHandler.validate(auth0JwtCredential);
                 return httpMessageContext.notifyContainerAboutLogin(result);
             } catch (IdentityVerificationException e) {
+                LOGGER.log(Level.WARNING, "authentication failed: {0}", e.getMessage());
                 return httpMessageContext.responseUnauthorized();
             }
         }
@@ -51,6 +56,6 @@ public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism
     }
 
     private boolean isCallbackRequest(HttpServletRequest request) {
-        return request.getRequestURI().equals("/callback") && request.getParameter("code") != null;
+        return request.getRequestURI().endsWith("/callback") && request.getParameter("code") != null;
     }
 }

@@ -2,6 +2,9 @@ package org.eclipse.cargotracker.interfaces.booking.web;
 
 import com.auth0.AuthenticationController;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.security.DeclareRoles;
 import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,7 +18,11 @@ import org.eclipse.cargotracker.application.security.Auth0Config;
  * @author hantsy
  */
 @WebServlet(urlPatterns = "/login")
+@DeclareRoles({"ADMIN", "USER"})
 public class LoginServlet extends HttpServlet {
+
+    private final static Logger LOGGER = Logger.getLogger(LoginServlet.class.getName());
+
     private final Auth0Config config;
     private final AuthenticationController authenticationController;
 
@@ -35,6 +42,8 @@ public class LoginServlet extends HttpServlet {
                 request.getServerPort(),
                 request.getContextPath()
         );
+
+        LOGGER.log(Level.INFO, "callback url:{0}", callbackUrl);
 
         // Create the authorization URL to redirect the user to, to begin the authentication flow.
         String authURL = authenticationController.buildAuthorizeUrl(request, response, callbackUrl)

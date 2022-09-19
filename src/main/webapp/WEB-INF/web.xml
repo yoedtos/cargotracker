@@ -25,7 +25,7 @@
     </welcome-file-list>
 
     <!-- Application resource dependencies like JMS queues and data sources
-        are still good candidates for XML, as is application configuration. -->
+    are still good candidates for XML, as is application configuration. -->
     <env-entry>
         <env-entry-name>java:app/configuration/GraphTraversalUrl</env-entry-name>
         <env-entry-type>java.lang.String</env-entry-type>
@@ -33,7 +33,7 @@
     </env-entry>
 
     <!-- Defining these at the application server level instead of here can
-        be more operations friendly and help make deployment even faster. -->
+    be more operations friendly and help make deployment even faster. -->
     <!--<data-source>
         <name>java:app/jdbc/CargoTrackerDatabase</name>
         <class-name>org.h2.jdbcx.JdbcDataSource</class-name>
@@ -69,4 +69,16 @@
         <resource-adapter>jmsra</resource-adapter>
         <destination-name>HandlingEventRegistrationAttemptQueue</destination-name>
     </jms-destination>-->
+    
+<!--    <security-constraint>
+        <display-name>Protected Resources</display-name>
+        <web-resource-collection>
+            <web-resource-name>Dashboard</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>ADMIN</role-name>
+            <role-name>USER</role-name>
+        </auth-constraint>
+    </security-constraint>-->
 </web-app>

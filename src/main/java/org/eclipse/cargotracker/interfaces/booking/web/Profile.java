@@ -30,11 +30,12 @@ public class Profile {
     private Map<String, Claim> claims;
 
     public void load() {
-        LOGGER.log(Level.FINEST, "get profile info.");
+        LOGGER.log(Level.INFO, "get profile info.");
         var principal = securityContext.getCallerPrincipal();
         if (principal instanceof Auth0JwtPrincipal) {
             var jwtPrincipal = (Auth0JwtPrincipal) principal;
             claims = jwtPrincipal.getIdToken().getClaims();
+            LOGGER.log(Level.INFO, "jwt claims: {0}", claims);
         }
     }
 
