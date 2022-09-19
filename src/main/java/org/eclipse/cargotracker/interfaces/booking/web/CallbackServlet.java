@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- *
  * @author hantsy
  */
 @WebServlet(urlPatterns = {"/callback"})
@@ -17,7 +16,6 @@ public class CallbackServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String referer = (String) request.getSession().getAttribute("Referer");
         String redirectTo = referer != null ? referer : request.getContextPath()+ "/admin/";
-
         response.sendRedirect(redirectTo);
     }
 }

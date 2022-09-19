@@ -5,7 +5,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import javax.security.enterprise.credential.Credential;
 
 /**
- *
  * @author hantsy
  */
 class Auth0JwtCredential implements Credential {

@@ -8,7 +8,6 @@ import javax.security.enterprise.identitystore.IdentityStore;
 import static javax.security.enterprise.identitystore.IdentityStore.ValidationType.VALIDATE;
 
 /**
- *
  * @author hantsy
  */
 @ApplicationScoped
