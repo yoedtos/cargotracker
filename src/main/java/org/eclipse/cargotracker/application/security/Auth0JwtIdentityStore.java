@@ -22,7 +22,7 @@ public class Auth0JwtIdentityStore implements IdentityStore {
         }
         return result;
     }
-    
+
     @Override
     public Set<ValidationType> validationTypes() {
         return Set.of(VALIDATE);

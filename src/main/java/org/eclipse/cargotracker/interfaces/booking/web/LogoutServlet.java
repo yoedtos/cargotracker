@@ -43,7 +43,7 @@ public class LogoutServlet extends HttpServlet {
             returnUrl += ":" + port;
         }
 
-        returnUrl += request.getContextPath()+"/admin/";
+        returnUrl += request.getContextPath() + "/admin/";
 
         // Build logout URL like:
         // https://{YOUR-DOMAIN}/v2/logout?client_id={YOUR-CLIENT-ID}&returnTo=http://localhost:3000/

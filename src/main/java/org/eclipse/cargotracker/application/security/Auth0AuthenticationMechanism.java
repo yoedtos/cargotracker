@@ -24,7 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 @AutoApplySession
 public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism {
 
-    private final static Logger LOGGER = Logger.getLogger(Auth0AuthenticationMechanism.class.getName());
+    private static final Logger LOGGER =
+            Logger.getLogger(Auth0AuthenticationMechanism.class.getName());
 
     private final AuthenticationController authenticationController;
     private final IdentityStoreHandler identityStoreHandler;
@@ -47,11 +48,11 @@ public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism
         // Exchange the code for the ID token, and notify container of result.
         if (isCallbackRequest(httpServletRequest)) {
             try {
-                Tokens tokens
-                        = authenticationController.handle(httpServletRequest, httpServletResponse);
+                Tokens tokens =
+                        authenticationController.handle(httpServletRequest, httpServletResponse);
                 Auth0JwtCredential auth0JwtCredential = new Auth0JwtCredential(tokens.getIdToken());
-                CredentialValidationResult result
-                        = identityStoreHandler.validate(auth0JwtCredential);
+                CredentialValidationResult result =
+                        identityStoreHandler.validate(auth0JwtCredential);
                 return httpMessageContext.notifyContainerAboutLogin(result);
             } catch (IdentityVerificationException e) {
                 LOGGER.log(Level.WARNING, "authentication failed: {0}", e.getMessage());
@@ -62,6 +63,7 @@ public class Auth0AuthenticationMechanism implements HttpAuthenticationMechanism
     }
 
     private boolean isCallbackRequest(HttpServletRequest request) {
-        return request.getRequestURI().endsWith("/callback") && request.getParameter("code") != null;
+        return request.getRequestURI().endsWith("/callback")
+                && request.getParameter("code") != null;
     }
 }

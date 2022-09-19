@@ -20,7 +20,7 @@ import org.eclipse.cargotracker.application.security.Auth0Config;
 @DeclareRoles({"ADMIN", "USER"})
 public class LoginServlet extends HttpServlet {
 
-    private final static Logger LOGGER = Logger.getLogger(LoginServlet.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LoginServlet.class.getName());
 
     private final Auth0Config config;
     private final AuthenticationController authenticationController;

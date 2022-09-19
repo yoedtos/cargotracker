@@ -15,7 +15,7 @@ public class CallbackServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String referer = (String) request.getSession().getAttribute("Referer");
-        String redirectTo = referer != null ? referer : request.getContextPath()+ "/admin/";
+        String redirectTo = referer != null ? referer : request.getContextPath() + "/admin/";
         response.sendRedirect(redirectTo);
     }
 }

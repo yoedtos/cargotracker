@@ -15,12 +15,14 @@ import static javax.security.enterprise.identitystore.IdentityStore.ValidationTy
 
 @ApplicationScoped
 public class AuthorizationIdentityStore implements IdentityStore {
-    private static final Logger LOGGER = Logger.getLogger(AuthorizationIdentityStore.class.getName());
+    private static final Logger LOGGER =
+            Logger.getLogger(AuthorizationIdentityStore.class.getName());
 
-    private final Map<String, Set<String>> authorization = Map.of(
-            "user", Set.of("ADMIN", "USER"),
-            "auth0|63249de53e292439f31c6be6", Set.of("ADMIN", "USER"),
-            "user@example.com",  Set.of("ADMIN", "USER"));// user in okta.
+    private final Map<String, Set<String>> authorization =
+            Map.of(
+                    "user", Set.of("ADMIN", "USER"),
+                    "auth0|63249de53e292439f31c6be6", Set.of("ADMIN", "USER"),
+                    "user@example.com", Set.of("ADMIN", "USER")); // user in okta.
 
     @Override
     public Set<ValidationType> validationTypes() {
@@ -31,7 +33,8 @@ public class AuthorizationIdentityStore implements IdentityStore {
     public Set<String> getCallerGroups(CredentialValidationResult validationResult) {
         var principal = validationResult.getCallerPrincipal().getName();
         LOGGER.log(Level.INFO, "Get principal name in validation result: {0}", principal);
-        return authorization.get(principal) == null ? Collections.<String>emptySet() : authorization.get(principal);
+        return authorization.get(principal) == null
+                ? Collections.<String>emptySet()
+                : authorization.get(principal);
     }
-
 }
