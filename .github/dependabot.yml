@@ -17,8 +17,6 @@ updates:
       #- dependency-name: "aws*"
       # Ignore some updates to the 'resteasy' package
       # Ignore only new versions for 4.x
-      - dependency-name: "org.jboss.resteasy:resteasy-jackson2-provider"
-        update-types: [ "version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "org.jboss.resteasy:resteasy-client"
         update-types: [ "version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "jakarta.platform:jakarta.jakartaee-api"
