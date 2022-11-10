@@ -9,7 +9,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=hantsy_cargotracker&metric=coverage)](https://sonarcloud.io/dashboard?id=hantsy_cargotracker)
 
 
-> **This is a personal fork of [Eclipse EE4J CargoTracker](https://github.com/eclipse-ee4j/cargotracker), I also contributed some work to the upstream project.**
+> **This is a personal fork of [Eclipse EE4J CargoTracker](https://github.com/eclipse-ee4j/cargotracker), I also [a contributor of the CargoTracker project](https://github.com/eclipse-ee4j/cargotracker/graphs/contributors).**
 
 > For the detailed introduction to the CargoTracker project, go to the original project website: https://eclipse-ee4j.github.io/cargotracker/.
 
@@ -31,7 +31,7 @@ Follow the following steps to build and run the applicaiton on your local system
 * Docker
 * A Jakarta EE 8 compatible application server
   * [Payara 5](https://www.payara.fish/downloads/) 
-  * [WildFly 23](https://www.wildfly.org)
+  * [WildFly 26](https://www.wildfly.org)
 
 ## Building
 
