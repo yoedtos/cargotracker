@@ -22,8 +22,9 @@ There are some highlights when comparing to the upstream project.
 * Add a plenty of testing codes to cover more use cases.
 * Add Github Actions workflows to build the project and run testing codes, and generate code quality report via Jacoco, SonarCloud.
 
+## Building
 
-## Prerequisites
+### Prerequisites
 
 * Java 11
 * Apache Maven 3.8.1
@@ -32,8 +33,6 @@ There are some highlights when comparing to the upstream project.
 * A Jakarta EE 8 compatible application server
   * [Payara 5](https://www.payara.fish/downloads/) 
   * [WildFly 26](https://www.wildfly.org)
-
-## Building
 
 ### Startup PostgresSQL Database
 
@@ -68,20 +67,21 @@ Open your browser, go to http://localhost:8080/cargo-tracker
 
 Cargo Tracker's testing is done using [JUnit](https://junit.org) and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against varied Arquillian Container adapters.
 
-###  Payara Managed Adapter
+###  Payara 5
 
-Run Arquillian tests against Payara Managed Adaper.
+Run the following command to run Arquillian tests against Payara Managed Adaper.
 
-```shell script
+```bash
 mvn clean verify -Parq-payara-managed -DskipTests=false
 ```
 
-###  WildFly Managed Adapter
+###  WildFly
 
-Run Arquillian tests against WildFly Managed Adaper.
+Run the following command to run Arquillian tests against WildFly Managed Adaper.
 
-```shell script
+```bash
 mvn clean verify -Parq-wildfly-managed -DskipTests=false
 ```
 
-> I have remove other profiles in the latest commits, if you are interested in it, go to  [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate), and follow the guides and expereince yourself.
+
+> I have removed other profiles in the latest commits, if you are interested in other Arquillian Adapters, go to  [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate), and follow [the guides](https://hantsy.github.io/jakartaee8-starter-boilerplate/) and expereince yourself.
