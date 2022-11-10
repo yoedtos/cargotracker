@@ -33,9 +33,9 @@ Follow the following steps to build and run the applicaiton on your local system
   * [Payara 5](https://www.payara.fish/downloads/) 
   * [WildFly 23](https://www.wildfly.org)
 
-## Building and Running CargoTracker Application
+## Building
 
-### Running PostgresSQL Database
+### Startup PostgresSQL Database
 
 There is a *docker-compose.yaml* file available in the project root folder.
 
@@ -64,7 +64,7 @@ mvn clean package wildfly:run -Pwildfly
 Open your browser, go to http://localhost:8080/cargo-tracker
 
 
-## Exploring the testing codes
+## Testing
 
 Cargo Tracker's testing is done using [JUnit](https://junit.org) and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against varied adapters.
 
