@@ -11,17 +11,17 @@
 
 > **This is a personal fork of [Eclipse EE4J CargoTracker](https://github.com/eclipse-ee4j/cargotracker), I also [a contributor of the CargoTracker project](https://github.com/eclipse-ee4j/cargotracker/graphs/contributors).**
 
-> For the detailed introduction to the CargoTracker project, go to the original project website: https://eclipse-ee4j.github.io/cargotracker/.
+> For the detailed introduction to the CargoTracker project, go to the upstream project website: https://eclipse-ee4j.github.io/cargotracker/.
 
 There are some highlights when comparing to the upstream project.
 
 * Utilize Docker to run a Postgres Database in both development and production to erase the risk brought by different enviroments.
-* Fully support running the application on WildFly, and aslo add configuratoins to run testing codes against varied Arquillian adapters, such as Payara Managed and WildFly Managed conttainer adapters.
-* The project *pom.xml* file includes multiple fine-grained Maven profille based configurations for varied Arquillian adapters, which is derived from [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate).
+* Add support to run application on WildFly.
+* Add several fine-grained Maven profilles for varied Arquillian Container adapters, which is derived from [Jakarta EE 8 template project](https://github.com/hantsy/jakartaee8-starter-boilerplate).
+* Replace Primefaces with simple Bootstrap css style and plain Facelets templates, clean up and reorginize all Facelets templates.
 * Add a plenty of testing codes to cover more use cases.
-* Analyse code quality automaticially at every build defined in the Github actions workflow, eg. code coverage report via Jacoco, SonarCloud analysis report.
+* Add Github Actions workflows to build the project and run testing codes, and generate code quality report via Jacoco, SonarCloud.
 
-Follow the following steps to build and run the applicaiton on your local system.
 
 ## Prerequisites
 
