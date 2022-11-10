@@ -66,7 +66,7 @@ Open your browser, go to http://localhost:8080/cargo-tracker
 
 ## Testing
 
-Cargo Tracker's testing is done using [JUnit](https://junit.org) and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against varied adapters.
+Cargo Tracker's testing is done using [JUnit](https://junit.org) and [Arquillian](http://arquillian.org/). There are several Maven profiles configured for running the testing codes against varied Arquillian Container adapters.
 
 ###  Payara Managed Adapter
 
