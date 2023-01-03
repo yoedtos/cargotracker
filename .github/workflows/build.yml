@@ -40,7 +40,7 @@ jobs:
     needs: [ formatting ]
     strategy:
       matrix:
-        distribution: ['adopt', 'zulu']
+        distribution: ['temurin', 'zulu']
         # test against latest update of each major Java version, as well as specific updates of LTS versions:
         java: [ 11, 17 ]
     steps:
