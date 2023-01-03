@@ -28,6 +28,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '11'
+          cache: 'maven'
 
       #       Use custom JDK file.
       #             - run: |
@@ -48,20 +49,10 @@ jobs:
       #                # Set JAVA_HOME:
       #                export JAVA_HOME=$HOME/.sdkman/candidates/java/current
 
-      - run: java -version
-#      - run: sudo netstat -nao
       - name: Start up databases via Docker Compose
         run: |
           docker-compose up -d postgres
           docker ps -a
-#      - run: sudo netstat -ano
-      - name: Cache Maven packages
-        uses: actions/cache@v3.2.1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-#      - run: sudo netstat -ano
       - name: Run integration test with -Parq-payara-managed
         run: mvn clean verify -Parq-payara-managed
 #      - name: Run integration test with -Parq-payara-managed
