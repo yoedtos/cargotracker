@@ -18,16 +18,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          download_url="https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.10_9.tar.gz"
-          wget -O $RUNNER_TEMP/java_package.tar.gz $download_url
       - uses: actions/setup-java@v3
         with:
-          distribution: 'jdkfile'
-          jdkFile: ${{ runner.temp }}/java_package.tar.gz
-          java-version: '11.0.0'
-          architecture: x64
-      - run: java -version
+          distribution: 'zulu'
+          java-version: '11'
+          cache: 'maven'
+
       - name: Start up databases via Docker Compose
         run: |
           docker-compose up -d postgres
@@ -38,25 +34,6 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v3.2.1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
 
       - name: Run integration test with -Parq-wildfly-managed
         run: mvn clean verify -Parq-wildfly-managed,wildfly
-
-#      - name: Run integration test with -Parq-wildfly-managed
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#        run: |
-#          mvn clean verify -Parq-wildfly-managed,wildfly,coverage jacoco:report \
-#          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-#          -Dsonar.host.url=https://sonarcloud.io \
-#          -Dsonar.login=$SONAR_TOKEN \
-#          -Dsonar.organization=hantsy \
-#          -Dsonar.projectKey=hantsy_cargotracker \
-#          -Dsonar.coverage.exclusions=**/dto/*
